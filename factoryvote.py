@@ -23,10 +23,17 @@ import time
 
 class factoryvote(minqlx.Plugin):
     def __init__(self):
-        self.add_command("factoryvote", self.cmd_factoryvote, 2)  # Admin level 2
-        self.add_command("fv", self.cmd_factoryvote, 2)           # Shortcut
+        self.version = "1.1"  # Set your version number here
+        self.add_command("factoryvote", self.cmd_factoryvote, 3)  # Admin level 3
+        self.add_command("fv", self.cmd_factoryvote, 3)           # Shortcut
+        self.add_command("fvv", self.cmd_version, 3)              # New command for version display
 
         self.factories = self.load_factories()
+        self.selected_factory = None  # Store the chosen factory
+        self.add_hook("game_countdown", self.handle_game_countdown)  # Hook for countdown message
+    
+    def cmd_version(self, player, msg, channel):
+        player.tell("^3FactoryVote Plugin Version:^7 {}".format(self.version))
 
     def load_factories(self):
         factories_file = os.path.join(self.get_cvar("fs_basepath"), "baseq3", "factories.txt")
@@ -38,6 +45,12 @@ class factoryvote(minqlx.Plugin):
         if not factories:
             self.logger.warning("factories.txt is empty.")
         return factories
+
+    def handle_game_countdown(self):
+        if self.selected_factory:
+            self.msg("^2Game starting with factory:^7 {}".format(self.selected_factory))
+        else:
+            self.msg("^2Game starting. No factory selected. Using default settings.")
 
     def cmd_factoryvote(self, player, msg, channel):
         if self.factories is None:
@@ -65,16 +78,16 @@ class factoryvote(minqlx.Plugin):
             player.tell("^1Invalid factory number.")
             return
 
-        factory = self.factories[selection - 1]
-        player.tell("^6You selected factory:^7 {}".format(factory))
-        self.msg("^6Starting vote to load current map with factory:^7 {}".format(factory))
-        self.callvote("qlx !map {} {}".format(self.game.map, factory), "Change map to selected factory")
+        self.selected_factory = self.factories[selection - 1]  # Store chosen factory
+        player.tell("^6You selected factory:^7 {}".format(self.selected_factory))
+        self.msg("^6Starting vote to load current map with factory:^7 {}".format(self.selected_factory))
+        self.callvote("qlx !map {} {}".format(self.game.map, self.selected_factory), "Change map to selected factory")
 
-        minqlx.delay(30, self.check_vote_result, factory)
+        minqlx.delay(30, self.check_vote_result)
 
-    def check_vote_result(self, factory):
+    def check_vote_result(self):
         if self.game.vote_passed:
-            self.msg("^2Vote passed! Loading factory:^7 {}".format(factory))
-            self.command("qlx !map {} {}".format(self.game.map, factory))
+            self.msg("^2Vote passed! Loading factory:^7 {}".format(self.selected_factory))
+            self.command("qlx !map {} {}".format(self.game.map, self.selected_factory))
         else:
-            self.msg("^1Vote failed for factory:^7 {}".format(factory))
+            self.msg("^1Vote failed for factory:^7 {}".format(self.selected_factory))
