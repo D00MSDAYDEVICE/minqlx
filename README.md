@@ -11,7 +11,8 @@ Using without a number will list the factories.<br>
 Command: !fv #
 
 <br/>
-# lastmaps.py
+# lastmaps.py<br>
 Lists the last 5 played maps<br>
 Useful to avoid voting overplayed maps.<br>
-Command: !lm.
+<br>
+Command: !lm
