@@ -9,9 +9,9 @@ Default admin level 3<br>
 Using without a number will list the factories.<br>
 <br>
 Command: !fv #
-
 <br/>
-# lastmaps.py<br>
+
+# lastmaps.py
 Lists the last 5 played maps<br>
 Useful to avoid voting overplayed maps.<br>
 <br>
