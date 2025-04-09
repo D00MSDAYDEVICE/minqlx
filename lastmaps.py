@@ -20,10 +20,15 @@ import time
 
 class lastmaps(minqlx.Plugin):
     def __init__(self):
+        self.version = "1.0"  # Set your version number here
         self.add_hook("game_end", self.on_game_end)
         self.add_hook("map", self.on_map_load)
         self.add_command("lastmaps", self.cmd_lastmaps)
         self.add_command("lm", self.cmd_lastmaps)
+        self.add_command("fvv", self.cmd_version, 3)    # New command for version display
+        
+    def cmd_version(self, player, msg, channel):
+        player.tell("^3Lastmaps Plugin Version:^7 {}".format(self.version))
 
         self.map_history = []
         self.current_map = None
@@ -34,11 +39,7 @@ class lastmaps(minqlx.Plugin):
         self.current_map = mapname
         self.map_start_time = time.time()
 
-        # Start a timer to add map after 5 minutes if not added
-        if self.map_check_timer:
-            self.cancel_timer(self.map_check_timer)
-
-        self.map_check_timer = self.set_timer(300, self.add_current_map)
+        minqlx.delay(300, self.add_current_map)
 
     def on_game_end(self, data):
         self.add_current_map()
