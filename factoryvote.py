@@ -48,9 +48,9 @@ class factoryvote(minqlx.Plugin):
 
     def handle_game_countdown(self):
         if self.selected_factory:
-            self.msg("^2Game starting with factory:^7 {}".format(self.selected_factory))
+            self.msg("^3Game starting with factory:^7 {}".format(self.selected_factory))
         else:
-            self.msg("^2Game starting. No factory selected. Using default settings.")
+            self.msg("^3Game starting. No factory selected. Using default settings.")
 
     def cmd_factoryvote(self, player, msg, channel):
         if self.factories is None:
