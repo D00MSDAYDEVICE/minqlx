@@ -25,7 +25,7 @@ class lastmaps(minqlx.Plugin):
         self.add_hook("map", self.on_map_load)
         self.add_command("lastmaps", self.cmd_lastmaps)
         self.add_command("lm", self.cmd_lastmaps)
-        self.add_command("fvv", self.cmd_version, 3)    # New command for version display
+        self.add_command("lmv", self.cmd_version, 3)    # New command for version display
         
     def cmd_version(self, player, msg, channel):
         player.tell("^3Lastmaps Plugin Version:^7 {}".format(self.version))
