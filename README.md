@@ -16,4 +16,6 @@ Commands:<br>
 Lists the last 5 played maps<br>
 Useful to avoid voting overplayed maps.<br>
 <br>
-Command: !lm
+Commands:<br>
+!lm<br>
+!lmv  - Displays plugin version number[
