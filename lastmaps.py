@@ -20,7 +20,7 @@ import time
 
 class lastmaps(minqlx.Plugin):
     def __init__(self):
-        self.version = "1.0"  # Set your version number here
+        self.version = "1.1"  # Set your version number here
         self.add_hook("game_end", self.on_game_end)
         self.add_hook("map", self.on_map_load)
         self.add_command("lastmaps", self.cmd_lastmaps)
