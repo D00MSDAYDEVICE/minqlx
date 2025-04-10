@@ -39,7 +39,7 @@ class lastmaps(minqlx.Plugin):
         self.current_map = mapname
         self.map_start_time = time.time()
 
-        minqlx.delay(300, self.add_current_map)
+        minqlx.delay(300)(self.add_current_map)
 
     def on_game_end(self, data):
         self.add_current_map()
