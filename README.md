@@ -24,7 +24,7 @@ Commands:<br><br>
 Extended motd to multiple lines to overcome character length and format limitations/ease of use<br>
 <br>
 Commands:<br><br>
-**!setmotd <line> <message>**	- Set specific line of MOTD (1-10).<br>
+**!setmotd "<line> <message>"**	- Set specific line of MOTD (1-10).<br>
 **!addmotd <message>**        - Adds a new line to the next free slot.<br>
 **!clearmotd**                - Clears all MOTD lines.<br>
 **!reloadmotd** 				      - Reloads MOTD lines from **motd.cfg** in /baseq3<br>
