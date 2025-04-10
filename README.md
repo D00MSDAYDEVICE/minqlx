@@ -18,4 +18,17 @@ Useful to avoid voting overplayed maps.<br>
 <br>
 Commands:<br>
 !lm<br>
-!lmv  - Displays plugin version number[
+!lmv  - Displays plugin version number
+
+# motd.py (replacement)
+Extended motd to multiple lines to overcome character length and format limitations/ease of use
+<br>
+Commands:<br>
+!setmotd <line> <message>	- Set specific line of MOTD (1-10).<br>
+!addmotd <message>        - Adds a new line to the next free slot.<br>
+!clearmotd                - Clears all MOTD lines.<br>
+!reloadmotd 				      - Reloads MOTD lines from motd.cfg in /baseq3<br>
+<br>
+Use set qlx_motd1, set qlx_motd2, etc to set from config file.<br>
+Add /exec motd.cfg to config.cfg or simply !reloadmotd<br>
+Config settings will not override existing motd (use !clearmotd and restart server).
