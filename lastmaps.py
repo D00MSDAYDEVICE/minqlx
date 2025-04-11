@@ -20,15 +20,20 @@ import time
 
 class lastmaps(minqlx.Plugin):
     def __init__(self):
+        self.version = "1.2"  # Set your version number here
         self.add_hook("game_end", self.on_game_end)
         self.add_hook("map", self.on_map_load)
         self.add_command("lastmaps", self.cmd_lastmaps)
         self.add_command("lm", self.cmd_lastmaps)
+        self.add_command("lmv", self.cmd_version, 3)    # New command for version display
 
         self.map_history = []
         self.current_map = None
         self.map_start_time = None
 
+    def cmd_version(self, player, msg, channel):
+        player.tell("^3Lastmaps Plugin Version:^7 {}".format(self.version))
+    
     def on_map_load(self, mapname, factory):
         self.current_map = mapname
         self.map_start_time = time.time()
