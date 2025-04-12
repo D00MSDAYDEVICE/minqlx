@@ -10,6 +10,7 @@ Using without a number will list the factories.<br>
 <br>
 Commands:<br><br>
 **!fv #** - Starts vote for the number selected<br>
+**!factory** - Shows current factory<br>
 **!fvv**  - Displays plugin version number
 
 # lastmaps.py
