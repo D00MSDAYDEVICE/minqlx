@@ -12,14 +12,12 @@ Damage can be set to a specific amount per hit or proportional in your server co
 + Shino's minqlx fork until the master is updated. You can get it/compile it from [HERE](https://github.com/mgaertne/minqlx).<br>
 + A factory or server with `g_friendlyfire = 1`<br>
 
-<br>
 Fixed slap damage:<br>
 
 `qlx_backfireSlapAmount 20`
 
 `qlx_backfireProportional 1`
-1 = Use proportional slap damage<br>
-0 = Use fixed damage<br>
+1 = Use proportional slap damage, 0 = Use fixed damage<br>
 
 `qlx_logDir`
 Optional log directory, default is backfire.log<br>
