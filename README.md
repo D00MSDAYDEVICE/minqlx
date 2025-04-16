@@ -8,7 +8,7 @@ This is an extension plugin for minqlx to slap/punish players that do team damag
 This works similar to a reverse vampiric effect.<br>
 Damage can be set to a specific amount per hit or proportional in your server config<br>
 <br>
-[!NOTE]
+>[!NOTE]
 **Required:**<br>
 + Shino's minqlx fork until the master is updated. This is needed from the damage hook. You can get it/compile it from [HERE](https://github.com/mgaertne/minqlx).<br>
 + A factory or server with `g_friendlyfire = 1`<br>
