@@ -3,6 +3,17 @@ Collection of plugins for Quake Live
 
 Add to your server's minqlx-plugins folder
 
+# backfire.py
+This is an extension plugin for minqlx to slap/punish players that do team damage<br>
+This works similar to a reverse vampiric effect.<br>
+Damage can be set to a specific amount per hit or proportional in your server config<br>
+<br>
+**Required:** Shino's minqlx fork until the master is updated. You can get it/compile it from [HERE](https://github.com/mgaertne/minqlx).
+<br>
+`qlx_backfireSlapAmount` "10"   // Fixed slap damage<br>
+`qlx_backfireProportional` "1"  // 1 = Use proportional slap damage, 0 = Use fixed damage<br>
+`qlx_logDir`                    // Optional log directory, default is backfire.log<br>
+<br>
 # factoryvote.py
 Allow the voting of factories you specify in baseq3/factories.txt<br>
 Default admin level: 3<br>
