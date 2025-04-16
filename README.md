@@ -9,7 +9,7 @@ This works similar to a reverse vampiric effect.<br>
 Damage can be set to a specific amount per hit or proportional in your server config<br>
 <br>
 **Required:**<br>
-+ Shino's minqlx fork until the master is updated. You can get it/compile it from [HERE](https://github.com/mgaertne/minqlx).<br>
++ Shino's minqlx fork until the master is updated. This is needed from the damage hook. You can get it/compile it from [HERE](https://github.com/mgaertne/minqlx).<br>
 + A factory or server with `g_friendlyfire = 1`<br>
 
 Fixed slap damage:<br>
@@ -20,7 +20,7 @@ Fixed slap damage:<br>
 1 = Use proportional slap damage, 0 = Use fixed damage<br>
 
 `qlx_logDir`
-Optional log directory, default is backfire.log<br>
+Optional log directory, default is serverfolder/logs/backfire.log<br>
 
 ## factoryvote.py<br>
 
