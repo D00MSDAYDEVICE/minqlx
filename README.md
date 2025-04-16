@@ -11,12 +11,12 @@ Damage can be set to a specific amount per hit or proportional in your server co
 **Required:**<br>
 + Shino's minqlx fork until the master is updated. You can get it/compile it from [HERE](https://github.com/mgaertne/minqlx).<br>
 + A factory or server with `g_friendlyfire = 1`<br>
-<br><br>
+<br>
 `qlx_backfireSlapAmount` 20   Fixed slap damage<br>
 `qlx_backfireProportional` 1  1 = Use proportional slap damage, 0 = Use fixed damage<br>
 `qlx_logDir`                  Optional log directory, default is backfire.log<br>
 <br>
-## factoryvote.py
+## factoryvote.py<br>
 Allow the voting of factories you specify in baseq3/factories.txt<br>
 Default admin level: 3<br>
 Using without a number will list the factories.<br>
@@ -26,7 +26,7 @@ Commands:<br><br>
 **!factory** - Shows current factory<br>
 **!fvv**  - Displays plugin version number
 
-## lastmaps.py
+## lastmaps.py<br>
 Lists the last 5 played maps<br>
 Useful to avoid voting overplayed maps.<br>
 <br>
@@ -34,7 +34,7 @@ Commands:<br><br>
 **!lm**<br>
 **!lmv**  - Displays plugin version number
 
-## motd.py (replacement)
+## motd.py (replacement)<br>
 Extended motd to multiple lines to overcome character length and format limitations/ease of use<br>
 <br>
 Commands:<br><br>
