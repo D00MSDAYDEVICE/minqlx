@@ -20,6 +20,9 @@ Fixed slap damage:<br>
 `qlx_backfireProportional 1`
 1 = Use proportional slap damage, 0 = Use fixed damage<br>
 
+`qlx_backfireMinHealth 1`
+Minimum amout of health before punishing further (1 prevents death)<br>
+
 `qlx_logDir`
 Optional log directory, default is serverfolder/logs/backfire.log<br>
 
