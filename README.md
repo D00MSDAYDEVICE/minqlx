@@ -62,7 +62,7 @@ Config settings will not override existing motd (use !clearmotd and restart serv
 Added ability for admins to change players names <br>
 Useful for those with blank names or lazy aliasing guys during tournaments :)<br>
 Existing !name still functions for players<br>
-Have not implemented a force or database save yet<br>
+Names now persist between reconnects until a !clear `<player ID #>` is performed.<br>
 <br>
 Commands:<br><br>
 **!setname** `<player ID #>` `<New Name>`	- Set a players name<br>
