@@ -65,4 +65,6 @@ Existing !name still functions for players<br>
 Names now persist between reconnects until a !clear `<player ID #>` is performed.<br>
 <br>
 Commands:<br><br>
-**!setname** `<player ID #>` `<New Name>`	- Set a players name<br>
+**!name** `<name>` - Player sets their own name<br>
+**!setname** `<player ID #>` `<New Name>`	- Admin sets a players name<br>
+**!clear** `<player ID #>` - Removes Admin name<br>
