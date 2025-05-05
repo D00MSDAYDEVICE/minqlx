@@ -57,3 +57,12 @@ Commands:<br><br>
 Use **set qlx_motd1**, **set qlx_motd2**, etc to set from config file.<br>
 Add /exec motd.cfg to config.cfg or simply !reloadmotd<br>
 Config settings will not override existing motd (use !clearmotd and restart server).
+
+## namesplus.py (replaces names)<br>
+Added ability for admins to change players names <br>
+Useful for those with blank names or lazy aliasing guys during tournaments :)<br>
+Existing !name still functions for players<br>
+Have not implemented a force or database save yet<br>
+<br>
+Commands:<br><br>
+**!setname** `<player ID #>` `<New Name>`	- Set a players name<br>
