@@ -41,14 +41,14 @@ Commands:<br><br>
 Lists the last 5 played maps<br>
 Useful to avoid voting overplayed maps.<br>
 <br>
-Commands:<br><br>
+**Commands:**<br>
 **!lm**<br>
 **!lmv**  - Displays plugin version number
 
 ## motd.py (replacement)<br>
 Extended motd to multiple lines to overcome character length and format limitations/ease of use<br>
 <br>
-Commands:<br><br>
+**Commands:**<br>
 **!setmotd** `<line #>` `<message>`	- Set specific line of MOTD (1-10).<br>
 **!addmotd** `<message>`      - Adds a new line to the next free slot.<br>
 **!clearmotd**                - Clears all MOTD lines.<br>
@@ -68,7 +68,7 @@ Names now persist between reconnects until a !clear `<player ID #>` is performed
 > Therefore, add all names and your other plugins:<br>
 set qlx_plugins "plugin_manager, essentials, motd, permission, ban, silence, clan, namesplus, log, workshop"<br>
 <br>
-Commands:<br><br>
+**Commands:**<br>
 **!name** `<name>` - Player sets their own name<br>
 **!setname** `<player ID #>` `<New Name>`	- Admin sets a players name<br>
 **!clear** `<player ID #>` - Removes Admin set name<br>
