@@ -65,7 +65,7 @@ Existing !name still functions for players<br>
 Names now persist between reconnects until a !clear `<player ID #>` is performed.<br>
 > [!NOTE]
 > **qlx_plugins** must not contain "DEFAULT" as this includes the original "names" and will break nameplus<br>
-> Therefore, add all names and your other plugins:<br>
+> Therefore, add all default plugin names and/or your other plugins:<br>
 set qlx_plugins "plugin_manager, essentials, motd, permission, ban, silence, clan, namesplus, log, workshop"<br>
 <br>
 Commands:<br>
