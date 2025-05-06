@@ -1,7 +1,7 @@
 # Edited by Doomsday 4 May 2025 - May the 4th be with you.
 # Added ability for admins to change players names
 # Useful for those with blank names or lazy aliasing guys during tournaments :)
-# Updates 5 May 2025 - Names now persist between reconnects until a !clear <player id> is performed.
+# Updates 6 May 2025 - Names now persist between reconnects until a !clear <player id> is performed.
 
 # minqlx - Extends Quake Live's dedicated server with extra functionality and scripting.
 # Copyright (C) 2015 Mino <mino@minomino.org>
@@ -23,33 +23,44 @@
 
 import minqlx
 import re
+import os
+import datetime
 
 _re_remove_excessive_colors = re.compile(r"(?:\^.)+(\^.)")
 _name_key = "minqlx:players:{}:colored_name"
+LOG_FILE = os.path.join(os.path.dirname(__file__), "namesplus.log")
 
+VERSION = "1.2.0"
 
 class namesplus(minqlx.Plugin):
     def __init__(self):
         self.add_hook("player_connect", self.handle_player_connect)
         self.add_hook("player_loaded", self.handle_player_loaded)
+        self.add_hook("player_disconnect", self.handle_player_disconnect)
         self.add_hook("userinfo", self.handle_userinfo)
-        self.add_command("name", self.cmd_name, usage="<name>", client_cmd_perm=0)  # Regular command
-        self.add_command("setname", self.cmd_setname_admin, usage="<player id> <name>", client_cmd_perm=2)  # Admin command
-        self.add_command("clear", self.cmd_clearname_admin, usage="<player id>", client_cmd_perm=2)  # Admin command
+        self.add_command("name", self.cmd_name, usage="<name>")
+        self.add_command("setname", self.cmd_setname_admin, usage="<player id> <name>", permission=4)
+        self.add_command("clear", self.cmd_clear_name, usage="<player id>", permission=4)
+        self.add_command("npv", self.cmd_version)
 
         self.set_cvar_once("qlx_enforceSteamName", "1")
+        self.steam_names = {}
         self.name_set = False
 
     def handle_player_connect(self, player):
-        # Store initial clean name
-        self.db.set(f"steam:{player.steam_id}:orig_name", player.clean_name)
+        self.steam_names[player.steam_id] = player.clean_name
 
     def handle_player_loaded(self, player):
         name_key = _name_key.format(player.steam_id)
         if name_key in self.db:
-            stored_name = self.db[name_key]
-            self.name_set = True
-            player.name = stored_name
+            db_name = self.db[name_key]
+            if not self.get_cvar("qlx_enforceSteamName", bool) or self.clean_text(db_name).lower() == player.clean_name.lower():
+                self.name_set = True
+                player.name = db_name
+                self.log_debug(f"Set loaded name for {player.id} ({player.clean_name}) to: {db_name}")
+
+    def handle_player_disconnect(self, player, reason):
+        self.steam_names.pop(player.steam_id, None)
 
     def handle_userinfo(self, player, changed):
         if self.name_set:
@@ -58,10 +69,14 @@ class namesplus(minqlx.Plugin):
 
         if "name" in changed:
             name_key = _name_key.format(player.steam_id)
-            stored_name = self.db.get(name_key)
-            if stored_name and self.clean_text(changed["name"]) != self.clean_text(stored_name):
-                changed["name"] = stored_name
+            if name_key not in self.db:
+                self.steam_names[player.steam_id] = self.clean_text(changed["name"])
+            elif self.steam_names.get(player.steam_id) == self.clean_text(changed["name"]):
+                changed["name"] = self.db[name_key]
                 return changed
+            else:
+                del self.db[name_key]
+                player.tell("Your registered name has been reset.")
 
     def cmd_name(self, player, msg, channel):
         name_key = _name_key.format(player.steam_id)
@@ -69,13 +84,11 @@ class namesplus(minqlx.Plugin):
         if len(msg) < 2:
             if name_key in self.db:
                 del self.db[name_key]
-                player.tell("Your custom name has been removed.")
-            else:
-                return minqlx.RET_USAGE
-            return minqlx.RET_STOP_ALL
+                player.tell("Your registered name has been removed.")
+                return minqlx.RET_STOP_ALL
+            return minqlx.RET_USAGE
 
         name = self.clean_excessive_colors(" ".join(msg[1:])).strip()
-
         if not self.validate_name(player, name):
             return minqlx.RET_STOP_ALL
 
@@ -83,7 +96,8 @@ class namesplus(minqlx.Plugin):
         self.name_set = True
         player.name = name
         self.db[name_key] = name
-        player.tell("Your custom name has been registered.")
+        player.tell("The name has been registered. To remove it, use ^6!name^7 with no arguments.")
+        self.log_debug(f"Player {player.id} set their name to: {name}")
         return minqlx.RET_STOP_ALL
 
     def cmd_setname_admin(self, player, msg, channel):
@@ -91,19 +105,16 @@ class namesplus(minqlx.Plugin):
             return minqlx.RET_USAGE
 
         try:
-            target_id = int(msg[1])  # Player ID is msg[1]
+            target_id = int(msg[1])
             target = self.player(target_id)
         except Exception:
             player.tell("Invalid player ID.")
             return minqlx.RET_STOP_ALL
 
-        # ✅ FIXED: skip msg[0] (!setname) and msg[1] (player ID)
         name = self.clean_excessive_colors(" ".join(msg[2:])).strip()
-
         if not self.validate_name(player, name, admin_override=True):
             return minqlx.RET_STOP_ALL
 
-        # Set the name and store it in the database
         name = "^7" + name
         self.name_set = True
         target.name = name
@@ -111,9 +122,10 @@ class namesplus(minqlx.Plugin):
 
         player.tell(f"Set name for ^6{target.clean_name}^7 to: {name}")
         target.tell(f"^7An admin has set your name to: {name}")
+        self.log_debug(f"Admin {player.id} set name for player {target.id} to: {name}")
         return minqlx.RET_STOP_ALL
 
-    def cmd_clearname_admin(self, player, msg, channel):
+    def cmd_clear_name(self, player, msg, channel):
         if len(msg) != 2:
             return minqlx.RET_USAGE
 
@@ -124,41 +136,49 @@ class namesplus(minqlx.Plugin):
             player.tell("Invalid player ID.")
             return minqlx.RET_STOP_ALL
 
-        key = _name_key.format(target.steam_id)
-        if key in self.db:
-            del self.db[key]
-            cached_name = target.clean_name  # Cache the name before changing it
-            orig_name = self.db.get(f"steam:{target.steam_id}:orig_name")
-            if not orig_name:
-                orig_name = target.clean_name
-            self.name_set = True
-            target.name = orig_name
-            player.tell(f"Cleared name override for ^6{cached_name}^7.")
-            target.tell("^7Your name override has been removed by an admin.")
+        name_key = _name_key.format(target.steam_id)
+        if name_key in self.db:
+            del self.db[name_key]
+            player.tell(f"Cleared name override for {target.clean_name}.")
+            target.tell("An admin has cleared your custom name.")
+            self.log_debug(f"Admin {player.id} cleared name for player {target.id}")
         else:
-            player.tell("No custom name found for that player.")
+            player.tell("No custom name to clear.")
         return minqlx.RET_STOP_ALL
 
-    def clean_text(self, text):
-        return re.sub(r"\^\d", "", text)
+    def cmd_version(self, player, msg, channel):
+        player.tell(f"^3Namesplus version: ^7{VERSION}")
 
     def clean_excessive_colors(self, name):
         def sub_func(match):
             return match.group(1)
         return _re_remove_excessive_colors.sub(sub_func, name)
 
+    def clean_text(self, text):
+        return re.sub(r"\^.", "", text)
+
     def validate_name(self, player, name, admin_override=False):
-        if len(name.encode("utf-8")) > 36:
-            player.tell("The name is too long. Consider using fewer colors or a shorter name.")
+        if len(name.encode()) > 36:
+            player.tell("Name is too long. Try fewer colors or characters.")
             return False
         if "\\" in name:
-            player.tell("The character '\\' cannot be used.")
+            player.tell("Name cannot contain the '^6\\^7' character.")
             return False
         if not self.clean_text(name).strip():
-            player.tell("Blank names cannot be used.")
+            player.tell("Blank names are not allowed.")
             return False
-        if self.get_cvar("qlx_enforceSteamName", bool) and not admin_override:
+        if not admin_override and self.get_cvar("qlx_enforceSteamName", bool):
             if self.clean_text(name).lower() != player.clean_name.lower():
-                player.tell("Your custom name must match your Steam name.")
+                player.tell("Name must match your Steam name.")
                 return False
         return True
+
+    def log_debug(self, message):
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        log_entry = f"[{timestamp}] {message}\n"
+        try:
+            with open(LOG_FILE, "a") as f:
+                f.write(log_entry)
+        except Exception as e:
+            self.logger.warning(f"Failed to write to log file: {e}")
+
