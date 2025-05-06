@@ -48,6 +48,8 @@ Commands:<br><br>
 ## motd.py (replacement)<br>
 Extended motd to multiple lines to overcome character length and format limitations/ease of use<br>
 <br>
+> [!NOTE]
+> **qlx_plugins** must not contain "DEFAULT" has this includes the original "names" and will break nameplus<br>
 Commands:<br><br>
 **!setmotd** `<line #>` `<message>`	- Set specific line of MOTD (1-10).<br>
 **!addmotd** `<message>`      - Adds a new line to the next free slot.<br>
@@ -68,3 +70,4 @@ Commands:<br><br>
 **!name** `<name>` - Player sets their own name<br>
 **!setname** `<player ID #>` `<New Name>`	- Admin sets a players name<br>
 **!clear** `<player ID #>` - Removes Admin set name<br>
+**!npv** - Show version number<br>
