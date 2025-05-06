@@ -32,7 +32,7 @@ Allow the voting of factories you specify in baseq3/factories.txt<br>
 Default admin level: 3<br>
 Using without a number will list the factories.<br>
 <br>
-Commands:<br><br>
+**Commands:**<br>
 **!fv #** - Starts vote for the number selected<br>
 **!factory** - Shows current factory<br>
 **!fvv**  - Displays plugin version number
@@ -68,7 +68,7 @@ Names now persist between reconnects until a !clear `<player ID #>` is performed
 > Therefore, add all names and your other plugins:<br>
 set qlx_plugins "plugin_manager, essentials, motd, permission, ban, silence, clan, namesplus, log, workshop"<br>
 <br>
-**Commands:**<br>
+Commands:<br>
 **!name** `<name>` - Player sets their own name<br>
 **!setname** `<player ID #>` `<New Name>`	- Admin sets a players name<br>
 **!clear** `<player ID #>` - Removes Admin set name<br>
