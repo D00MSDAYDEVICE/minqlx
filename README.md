@@ -48,8 +48,6 @@ Commands:<br><br>
 ## motd.py (replacement)<br>
 Extended motd to multiple lines to overcome character length and format limitations/ease of use<br>
 <br>
-> [!NOTE]
-> **qlx_plugins** must not contain "DEFAULT" has this includes the original "names" and will break nameplus<br>
 Commands:<br><br>
 **!setmotd** `<line #>` `<message>`	- Set specific line of MOTD (1-10).<br>
 **!addmotd** `<message>`      - Adds a new line to the next free slot.<br>
@@ -65,6 +63,8 @@ Added ability for admins to change players names <br>
 Useful for those with blank names or lazy aliasing guys during tournaments :)<br>
 Existing !name still functions for players<br>
 Names now persist between reconnects until a !clear `<player ID #>` is performed.<br>
+> [!NOTE]
+> **qlx_plugins** must not contain "DEFAULT" has this includes the original "names" and will break nameplus<br>
 <br>
 Commands:<br><br>
 **!name** `<name>` - Player sets their own name<br>
