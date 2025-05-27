@@ -1,3 +1,6 @@
+# Edited by Doomsday 27 May 2025 - Added setting by steamid
+# Added qlx_enforceAdminName for improved persistence
+#
 # Edited by Doomsday 4 May 2025 - May the 4th be with you.
 # Added ability for admins to change players names
 # Useful for those with blank names or lazy aliasing guys during tournaments :)
@@ -30,7 +33,7 @@ _re_remove_excessive_colors = re.compile(r"(?:\^.)+(\^.)")
 _name_key = "minqlx:players:{}:colored_name"
 LOG_FILE = os.path.join(os.path.dirname(__file__), "namesplus.log")
 
-VERSION = "1.2.0"
+VERSION = "1.3.2"
 
 class namesplus(minqlx.Plugin):
     def __init__(self):
@@ -43,9 +46,11 @@ class namesplus(minqlx.Plugin):
         self.add_command("clear", self.cmd_clear_name, usage="<player id>", permission=4)
         self.add_command("npv", self.cmd_version)
 
-        self.set_cvar_once("qlx_enforceSteamName", "1")
+        self.set_cvar_once("qlx_enforceSteamName", "0")
         self.steam_names = {}
         self.name_set = False
+        
+        self.set_cvar_once("qlx_enforceAdminName", "1")
 
     def handle_player_connect(self, player):
         self.steam_names[player.steam_id] = player.clean_name
@@ -67,8 +72,15 @@ class namesplus(minqlx.Plugin):
             self.name_set = False
             return
 
+        name_key = _name_key.format(player.steam_id)
+
+        # Enforce admin-set names if qlx_enforceAdminName is enabled
+        if self.get_cvar("qlx_enforceAdminName", bool) and name_key in self.db:
+            changed["name"] = self.db[name_key]  # Restore admin-set name
+            return changed
+
+        # Regular name handling
         if "name" in changed:
-            name_key = _name_key.format(player.steam_id)
             if name_key not in self.db:
                 self.steam_names[player.steam_id] = self.clean_text(changed["name"])
             elif self.steam_names.get(player.steam_id) == self.clean_text(changed["name"]):
@@ -104,11 +116,17 @@ class namesplus(minqlx.Plugin):
         if len(msg) < 3:
             return minqlx.RET_USAGE
 
+        target_id = msg[1]
+    
         try:
-            target_id = int(msg[1])
-            target = self.player(target_id)
+            if target_id.isdigit():
+                target = self.player(int(target_id))  # Try fetching player by Player ID
+                steam_id = target.steam_id if target else int(target_id)  # Use Steam ID if offline
+            else:
+                player.tell("Invalid ID format. Use a Player ID or Steam ID.")
+                return minqlx.RET_STOP_ALL
         except Exception:
-            player.tell("Invalid player ID.")
+            player.tell("Player not found or invalid ID.")
             return minqlx.RET_STOP_ALL
 
         name = self.clean_excessive_colors(" ".join(msg[2:])).strip()
@@ -116,34 +134,46 @@ class namesplus(minqlx.Plugin):
             return minqlx.RET_STOP_ALL
 
         name = "^7" + name
-        self.name_set = True
-        target.name = name
-        self.db[_name_key.format(target.steam_id)] = name
+        self.db[_name_key.format(steam_id)] = name  # Store name in Redis using Steam ID
 
-        player.tell(f"Set name for ^6{target.clean_name}^7 to: {name}")
-        target.tell(f"^7An admin has set your name to: {name}")
-        self.log_debug(f"Admin {player.id} set name for player {target.id} to: {name}")
+        if target:
+            self.name_set = True
+            target.name = name
+            target.tell(f"^3An admin has set your name to: {name}")
+
+        player.tell(f"Set name for Steam ID {steam_id} to: {name}")
+        self.log_debug(f"Admin {player.id} set name for Steam ID {steam_id} to: {name}")
+
         return minqlx.RET_STOP_ALL
 
     def cmd_clear_name(self, player, msg, channel):
         if len(msg) != 2:
             return minqlx.RET_USAGE
 
+        target_id = msg[1]
+
         try:
-            target_id = int(msg[1])
-            target = self.player(target_id)
+            if target_id.isdigit():
+                target = self.player(int(target_id))  # Try fetching player by Player ID
+                steam_id = target.steam_id if target else int(target_id)  # Use Steam ID if offline
+            else:
+                player.tell("Invalid ID format. Use a Player ID or Steam ID.")
+                return minqlx.RET_STOP_ALL
         except Exception:
-            player.tell("Invalid player ID.")
+            player.tell("Player not found or invalid ID.")
             return minqlx.RET_STOP_ALL
 
-        name_key = _name_key.format(target.steam_id)
+        name_key = _name_key.format(steam_id)
+
         if name_key in self.db:
             del self.db[name_key]
-            player.tell(f"Cleared name override for {target.clean_name}.")
-            target.tell("An admin has cleared your custom name.")
-            self.log_debug(f"Admin {player.id} cleared name for player {target.id}")
+            player.tell(f"Cleared name override for Steam ID {steam_id}.")
+            if target:
+                target.tell("An admin has cleared your custom name.")
+            self.log_debug(f"Admin {player.id} cleared name for Steam ID {steam_id}")
         else:
             player.tell("No custom name to clear.")
+
         return minqlx.RET_STOP_ALL
 
     def cmd_version(self, player, msg, channel):
@@ -181,4 +211,3 @@ class namesplus(minqlx.Plugin):
                 f.write(log_entry)
         except Exception as e:
             self.logger.warning(f"Failed to write to log file: {e}")
-
