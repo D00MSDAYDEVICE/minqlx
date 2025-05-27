@@ -68,8 +68,12 @@ Names now persist between reconnects until a !clear `<player ID #>` is performed
 > Therefore, add all default plugin names and/or your other plugins:<br>
 > set qlx_plugins "plugin_manager, essentials, motd, permission, ban, silence, clan, namesplus, log, workshop"<br>
 
+Additional settings:"<br>
+qlx_enforceAdminName"<br>
+qlx_enforceSteamName"<br>
+
 **Commands:**<br>
 **!name** `<name>` - Player sets their own name<br>
-**!setname** `<player ID #>` `<New Name>`	- Admin sets a players name<br>
+**!setname** `<player ID #>` OR `<steam ID #>` `<New Name>`	- Admin sets a players name<br>
 **!clear** `<player ID #>` - Removes Admin set name<br>
 **!npv** - Show version number<br>
