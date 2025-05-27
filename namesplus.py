@@ -1,5 +1,6 @@
 # Edited by Doomsday 27 May 2025 - Added setting by steamid
 # Added qlx_enforceAdminName for improved persistence
+# Added !listnames
 #
 # Edited by Doomsday 4 May 2025 - May the 4th be with you.
 # Added ability for admins to change players names
@@ -33,7 +34,7 @@ _re_remove_excessive_colors = re.compile(r"(?:\^.)+(\^.)")
 _name_key = "minqlx:players:{}:colored_name"
 LOG_FILE = os.path.join(os.path.dirname(__file__), "namesplus.log")
 
-VERSION = "1.3.2"
+VERSION = "1.4.1"
 
 class namesplus(minqlx.Plugin):
     def __init__(self):
@@ -45,7 +46,8 @@ class namesplus(minqlx.Plugin):
         self.add_command("setname", self.cmd_setname_admin, usage="<player id> <name>", permission=4)
         self.add_command("clear", self.cmd_clear_name, usage="<player id>", permission=4)
         self.add_command("npv", self.cmd_version)
-
+        self.add_command("listnames", self.cmd_list_names, permission=3)
+        
         self.set_cvar_once("qlx_enforceSteamName", "0")
         self.steam_names = {}
         self.name_set = False
@@ -178,6 +180,23 @@ class namesplus(minqlx.Plugin):
 
     def cmd_version(self, player, msg, channel):
         player.tell(f"^3Namesplus version: ^7{VERSION}")
+
+    def cmd_list_names(self, player, msg, channel):
+        admin_names = []
+    
+        for key in self.db.keys("minqlx:players:*:colored_name"):  # Get all stored names
+            steam_id = key.split(":")[2]  # Extract Steam ID from key format
+            name = self.db[key]
+            
+            # Ensure Steam ID is always displayed in white, separate from colored names
+            admin_names.append(f"^7Steam ID {steam_id}: {name}")
+
+        if not admin_names:
+            player.tell("^3No admin-set names found.")
+        else:
+            player.tell("^3Admin-set names:^7\n" + "\n".join(admin_names))
+
+        return minqlx.RET_STOP_ALL
 
     def clean_excessive_colors(self, name):
         def sub_func(match):
