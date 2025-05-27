@@ -76,4 +76,5 @@ qlx_enforceSteamName<br>
 **!name** `<name>` - Player sets their own name<br>
 **!setname** `<player ID #>` OR `<steam ID #>` `<New Name>`	- Admin sets a players name<br>
 **!clear** `<player ID #>` - Removes Admin set name<br>
+**!listnames** - Shows a list of Admin-set names<br>
 **!npv** - Show version number<br>
