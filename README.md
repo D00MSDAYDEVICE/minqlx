@@ -57,11 +57,11 @@ Made this for a quick and dirty way to import scores from other games into OBS.<
 **!lsredname** - Set Red team name<br>
 **!lsbluename** - Set Blue team name<br>
 **!lscolor** - Set font color<br>
-**!lsbgcolor** - Set backfround color<br>
+**!lsbgcolor** - Set background color<br>
 **!lsupdate** - Force update of scoreboard<br>
-**!lspath** - Set your own output path, such as: /var/www/html/server4<br>
+**!lspath** - Set your own output path, such as: /var/www/html/server2<br>
 
-CVARS for configs:<br>
+**CVARS for configs:**<br>
 qlx_scorerefresh "20" - time in seconds to auto-refresh<br>
 qlx_livescorecolor<br>
 qlx_livescorebgcolor<br>
