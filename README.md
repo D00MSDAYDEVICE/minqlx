@@ -45,6 +45,31 @@ Useful to avoid voting overplayed maps.<br>
 **!lm**<br>
 **!lmv**  - Displays plugin version number
 
+## livescoreboard.py<br>
+Outputs a simple scoreboard to HTML<br>
+Made this for a quick and dirty way to import scores from other games into OBS.<br>
+<br>
+**Commands:**<br>
+**!lm**<br>
+**!lmv**  - Displays plugin version number
+**!lsstyle**  - Set scoreboard style, Default: 1 , One-line: 2
+**!lstitle** - Set scoreboard title
+**!lsredname** - Set Red team name
+**!lsbluename** - Set Blue team name
+**!lscolor** - Set font color
+**!lsbgcolor** - Set backfround color
+**!lsupdate** - Force update of scoreboard
+**!lspath** - Set your own output path, such as: /var/www/html/server4
+
+CVARS for configs:
+qlx_scorerefresh "20" - time in seconds to auto-refresh
+qlx_livescorecolor
+qlx_livescorebgcolor
+qlx_lstitle
+qlx_lsredname
+qlx_lsbluename
+qlx_lspath
+
 ## motd.py (replacement)<br>
 Extended motd to multiple lines to overcome character length and format limitations/ease of use<br>
 <br>
