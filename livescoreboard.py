@@ -1,9 +1,10 @@
 import minqlx
 import os
 import datetime
+from threading import Timer
 
 LOG_FILE = os.path.join(os.path.dirname(__file__), "livescoreboard.log")
-VERSION = "1.5"
+VERSION = "1.6"
 
 class livescoreboard(minqlx.Plugin):
     def __init__(self):
@@ -22,7 +23,8 @@ class livescoreboard(minqlx.Plugin):
 
         self.livescore_folder = self.get_cvar("qlx_lspath") or os.path.join(self.plugin_path, "livescores")
         self.file_path = os.path.join(self.livescore_folder, "index.html")
-        self.refresh_interval = int(self.get_cvar("qlx_scorerefresh"))        
+        self.refresh_interval = int(self.get_cvar("qlx_scorerefresh")) 
+        self.scoreboard_timer = None  # initialize the timer holder        
 
         # Commands for status, customization, and reset
         self.add_command("lscheck", self.cmd_check_status)
@@ -44,17 +46,23 @@ class livescoreboard(minqlx.Plugin):
 
         # Write initial scoreboard
         self.write_html()
+        
+        # Start the auto-refresh timer
+        self.start_scoreboard_timer()
 
     def handle_player_connect(self, player):
         """Ensures scoreboard updates when players join."""
-        self.write_html()
-
+        self.write_html()     
+    
     def get_team_data(self):
-        """Gets team names from custom CVARs and scores from game state."""
         blue_team_name = self.get_cvar("qlx_lsbluename") or "Blue Team"
         red_team_name = self.get_cvar("qlx_lsredname") or "Red Team"
-        blue_score = int(self.get_cvar("g_teamScore_blue") or 0)
-        red_score = int(self.get_cvar("g_teamScore_red") or 0)
+
+        try:
+            blue_score = int(self.game.blue_score)
+            red_score = int(self.game.red_score)
+        except:
+            blue_score = red_score = 0
 
         return blue_team_name, red_team_name, blue_score, red_score
 
@@ -78,7 +86,7 @@ class livescoreboard(minqlx.Plugin):
             map_title = "Unknown Map"
 
         if style == "2":
-            score_line = f"{red_team} {red_score} - {blue_score} {blue_team} | Map: {map_title}"
+            score_line = f"{red_team} [{red_score} - {blue_score}] {blue_team} | Map: {map_title}"
             css = f"""
                 body {{
                     font-family: Arial, sans-serif;
@@ -167,11 +175,26 @@ class livescoreboard(minqlx.Plugin):
             self.log_debug(f"Error writing scoreboard: {e}")
 
     def update_scoreboard(self):
-        """Scheduled automatic updates using minqlx timers."""
+        """Performs an update and restarts the timer."""
         self.write_html()
-        self.refresh_interval = int(self.get_cvar("qlx_scorerefresh"))
-        self.set_timer(self.refresh_interval, self.update_scoreboard)
+        self.start_scoreboard_timer()  # re-schedule next update
+        self.log_debug("Scoreboard refreshed via timer.")
 
+    def start_scoreboard_timer(self):
+        """Starts or restarts the scoreboard update timer."""
+        self.stop_scoreboard_timer()
+        self.refresh_interval = int(self.get_cvar("qlx_scorerefresh"))
+        self.scoreboard_timer = Timer(self.refresh_interval, self.update_scoreboard)
+        self.scoreboard_timer.start()
+
+    def stop_scoreboard_timer(self):
+        """Stops the running scoreboard timer if active."""
+        try:
+            if self.scoreboard_timer and self.scoreboard_timer.is_alive():
+                self.scoreboard_timer.cancel()
+        except:
+            pass    
+    
     def handle_game_start(self, _):
         """Ensures scoreboard updates after a game starts."""
         self.update_scoreboard()
