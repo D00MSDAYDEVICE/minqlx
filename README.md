@@ -53,13 +53,15 @@ Made this for a quick and dirty way to import scores from other games into OBS.<
 **!lscheck** - Check if plugin is running<br>
 **!lsv**  - Displays plugin version number<br>
 **!lsstyle**  - Set scoreboard style, Default: 1 , One-line: 2<br>
-**!lstitle** - Set scoreboard title<br>
+**!lstitle** - Set scoreboard title, blank to clear<br>
 **!lsredname** - Set Red team name<br>
 **!lsbluename** - Set Blue team name<br>
 **!lscolor** - Set font color<br>
 **!lsbgcolor** - Set background color<br>
 **!lsupdate** - Force update of scoreboard<br>
-**!lspath** - Set your own output path, such as: /var/www/html/server2<br>
+**!lspath** - Set your own output path, such as: /var/www/html/server2, leave blank to see current value, clear to clear<br>
+**!lscustom** - Add your own custom text to end of Style 2, blank to clear.
+
 
 **CVARS for configs:**<br>
 qlx_scorerefresh "20" - time in seconds to auto-refresh<br>
@@ -69,6 +71,7 @@ qlx_lstitle<br>
 qlx_lsredname<br>
 qlx_lsbluename<br>
 qlx_lspath<br>
+qlx_lscustom<br>
 
 ## motd.py (replacement)<br>
 Extended motd to multiple lines to overcome character length and format limitations/ease of use<br>
