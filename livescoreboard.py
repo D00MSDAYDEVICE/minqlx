@@ -4,7 +4,7 @@ import datetime
 from threading import Timer
 
 LOG_FILE = os.path.join(os.path.dirname(__file__), "livescoreboard.log")
-VERSION = "1.6"
+VERSION = "1.7"
 
 class livescoreboard(minqlx.Plugin):
     def __init__(self):
@@ -34,6 +34,7 @@ class livescoreboard(minqlx.Plugin):
         self.add_command("lsredname", self.cmd_set_red_name, usage="!lsredname <name>", permission=5)
         self.add_command("lsbluename", self.cmd_set_blue_name, usage="!lsbluename <name>", permission=5)
         self.add_command("lstitle", self.cmd_set_title, usage="!lstitle <text>", permission=5)
+        self.add_command("lscustom", self.cmd_set_custom, usage="!lscustom <text>", permission=5)
         self.add_command("lsstyle", self.cmd_set_style, usage="!lsstyle <1 or 2>", permission=5)
         self.add_command("resetls", self.cmd_reset_settings, usage="!resetls", permission=5)
         self.add_command("lsupdate", self.cmd_force_update, usage="!lsupdate", permission=5)
@@ -72,6 +73,7 @@ class livescoreboard(minqlx.Plugin):
 
     def generate_html(self, blue_team, red_team, blue_score, red_score):
         """Creates a live scoreboard HTML file with customizable colors, title, and layout style."""
+        custom_text = self.get_cvar("qlx_lscustom") or ""  # Get stored custom text
         title = self.get_cvar("qlx_lstitle")
         if title is None:
             title = "Live Scoreboard"
@@ -86,7 +88,7 @@ class livescoreboard(minqlx.Plugin):
             map_title = "Unknown Map"
 
         if style == "2":
-            score_line = f"{red_team} [{red_score} - {blue_score}] {blue_team} | Map: {map_title}"
+            score_line = f"{red_team} [{red_score} - {blue_score}] {blue_team} | Map: {map_title} {custom_text}"
             css = f"""
                 body {{
                     font-family: Arial, sans-serif;
@@ -258,7 +260,28 @@ class livescoreboard(minqlx.Plugin):
             player.tell(f"^2[LiveScoreboard]^7 Title set to: {new_title}")
     
         self.write_html()  # Update scoreboard immediately
+    
+    def cmd_set_custom(self, player, msg, channel):
+        """Updates the scoreboard custom text. Use !lscustom or !lscustom clear."""
+        current_custom = self.get_cvar("qlx_lscustom") or ""  # Get current value
 
+        if len(msg) == 1:  # No arguments → Show current value
+            player.tell(f"^2[LiveScoreboard]^7 Current custom text: {current_custom if current_custom else '(None)'}")
+            return
+
+        if msg[1].lower() in ["none", "clear", '""']:  # Clear value
+            self.set_cvar("qlx_lscustom", "")
+            player.tell("^2[LiveScoreboard]^7 Custom text has been cleared.")
+        else:
+            new_custom = " ".join(msg[1:])
+            if not new_custom.startswith("| "):
+                new_custom = f"| {new_custom}"  # Ensure it starts with a pipe
+
+            self.set_cvar("qlx_lscustom", new_custom)
+            player.tell(f"^2[LiveScoreboard]^7 Custom text set to: {new_custom}")
+
+        self.write_html()  # Immediately update scoreboard    
+    
     def cmd_set_style(self, player, msg, channel):
         if len(msg) != 2 or msg[1] not in ["1", "2"]:
             player.tell("Usage: !lsstyle <1 or 2>")
@@ -269,6 +292,7 @@ class livescoreboard(minqlx.Plugin):
         self.write_html()
 
     def cmd_reset_settings(self, player, msg, channel):
+        self.set_cvar("qlx_lscustom", "")  # Ensure custom text is cleared
         self.set_cvar("qlx_livescorecolor", "#ffffff")
         self.set_cvar("qlx_livescorebgcolor", "#000000")
         self.set_cvar("qlx_lstitle", "Live Scoreboard")
