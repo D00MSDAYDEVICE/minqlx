@@ -1,3 +1,5 @@
+# Edited by Doomsday 13 July 2025 - qlx_enforceAdminName 1 now also enforces names at game start
+#
 # Edited by Doomsday 27 May 2025 - Added setting by steamid
 # Added qlx_enforceAdminName for improved persistence
 # Added !listnames
@@ -34,7 +36,7 @@ _re_remove_excessive_colors = re.compile(r"(?:\^.)+(\^.)")
 _name_key = "minqlx:players:{}:colored_name"
 LOG_FILE = os.path.join(os.path.dirname(__file__), "namesplus.log")
 
-VERSION = "1.4.1"
+VERSION = "1.4.2"
 
 class namesplus(minqlx.Plugin):
     def __init__(self):
@@ -47,7 +49,10 @@ class namesplus(minqlx.Plugin):
         self.add_command("clear", self.cmd_clear_name, usage="<player id>", permission=4)
         self.add_command("npv", self.cmd_version)
         self.add_command("listnames", self.cmd_list_names, permission=3)
+        self.add_command("enforce", self.cmd_enforce, permission=4)
         
+		self.add_hook("game_start", self.handle_game_start)
+		
         self.set_cvar_once("qlx_enforceSteamName", "0")
         self.steam_names = {}
         self.name_set = False
@@ -79,6 +84,8 @@ class namesplus(minqlx.Plugin):
         # Enforce admin-set names if qlx_enforceAdminName is enabled
         if self.get_cvar("qlx_enforceAdminName", bool) and name_key in self.db:
             changed["name"] = self.db[name_key]  # Restore admin-set name
+            player.name = stored_name  # Force name update immediately
+            player.tell(f"^3Your name has been updated to: {self.db[name_key]}")  # Notify player
             return changed
 
         # Regular name handling
@@ -87,6 +94,8 @@ class namesplus(minqlx.Plugin):
                 self.steam_names[player.steam_id] = self.clean_text(changed["name"])
             elif self.steam_names.get(player.steam_id) == self.clean_text(changed["name"]):
                 changed["name"] = self.db[name_key]
+                player.name = stored_name  # Force name update immediately
+                player.tell(f"^3Your name has been updated to: {self.db[name_key]}")  # Notify player
                 return changed
             else:
                 del self.db[name_key]
@@ -178,9 +187,47 @@ class namesplus(minqlx.Plugin):
 
         return minqlx.RET_STOP_ALL
 
-    def cmd_version(self, player, msg, channel):
+    def handle_game_start(self, game):
+		if self.get_cvar("qlx_enforceAdminName", bool):
+			enforced_count = 0
+			for p in self.players():
+				name_key = _name_key.format(p.steam_id)
+				if name_key in self.db:
+					stored_name = self.db[name_key]
+					if p.name != stored_name:
+						self.name_set = True
+						p.name = stored_name
+						p.tell(f"^3Your name has been updated to: {stored_name}")
+						enforced_count += 1
+			
+            if enforced_count > 0:
+            minqlx.broadcast("^3Player names enforced.")
+            self.log_debug(f"Auto-enforced {enforced_count} names at match start.")
+	
+	def cmd_version(self, player, msg, channel):
         player.tell(f"^3Namesplus version: ^7{VERSION}")
 
+    def cmd_enforce(self, player, msg, channel):
+        """Enforces stored names for currently connected players."""
+        enforced_count = 0
+
+        for p in self.players():  # Loop through all connected players
+            name_key = _name_key.format(p.steam_id)  # Get stored name key
+
+            if name_key in self.db:  # Check if the player has a stored name
+                stored_name = self.db[name_key]
+
+                if p.name != stored_name:  # If current name is different, update it
+                    self.name_set = True
+                    p.name = stored_name
+                    p.tell(f"^3Your name has been updated to: {stored_name}")
+                    enforced_count += 1
+
+        player.tell(f"^3Enforced names for {enforced_count} players.")
+        self.log_debug(f"Admin {player.id} enforced {enforced_count} player names.")
+
+        return minqlx.RET_STOP_ALL
+    
     def cmd_list_names(self, player, msg, channel):
         admin_names = []
     
