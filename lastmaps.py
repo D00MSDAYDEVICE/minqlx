@@ -20,7 +20,7 @@ import time
 
 class lastmaps(minqlx.Plugin):
     def __init__(self):
-        self.version = "1.2"  # Set your version number here
+        self.version = "1.2.1"  # Set your version number here
         self.add_hook("game_end", self.on_game_end)
         self.add_hook("map", self.on_map_load)
         self.add_command("lastmaps", self.cmd_lastmaps)
@@ -60,7 +60,7 @@ class lastmaps(minqlx.Plugin):
 
     def cmd_lastmaps(self, player, msg, channel):
         if not self.map_history:
-            player.tell("^1No maps have been tracked yet.")
+            player.tell("^1No maps have been tracked since server restart.")
             return
 
-        player.tell("^6Last Maps Played:^7 {}".format(", ".join(self.map_history)))
+        self.msg("^6Last Maps Played:^7 {}".format(", ".join(self.map_history)))
