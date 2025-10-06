@@ -201,8 +201,8 @@ class namesplus(minqlx.Plugin):
 						enforced_count += 1
 			
             if enforced_count > 0:
-            minqlx.broadcast("^3Player names enforced.")
-            self.log_debug(f"Auto-enforced {enforced_count} names at match start.")
+                minqlx.broadcast("^3Player names enforced.")
+                self.log_debug(f"Auto-enforced {enforced_count} names at match start.")
 	
 	def cmd_version(self, player, msg, channel):
         player.tell(f"^3Namesplus version: ^7{VERSION}")
