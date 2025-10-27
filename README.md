@@ -7,12 +7,12 @@ Add to your server's minqlx-plugins folder
 This plugin will automatically kick users (after 1 warning) for using words added to the word list.<br>
 <br>
 **Commands:**<br>
-**!addword #** - Adds a word the list<br>
+**!addword** - Adds a word the list<br>
 **!delword** - Removes/deletes word from the list<br>
 **!listwords**  - Displays the word list<br>
 
-**Optional:**<br> Regex patterns can also be added to autokick_patterns.txt
-A autokick.log file is also kept.
+**Optional:**<br> Regex patterns can also be added to autokick_patterns.txt<br>
+An autokick.log file is also kept.
 
 ## backfire.py
 This is an extension plugin for minqlx to slap/punish players that do team damage<br>
