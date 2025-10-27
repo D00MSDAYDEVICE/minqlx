@@ -3,6 +3,17 @@ Collection of plugins for Quake Live
 
 Add to your server's minqlx-plugins folder
 
+## autokick.py
+This plugin will automatically kick users (after 1 warning) for using words added to the word list.<br>
+<br>
+**Commands:**<br>
+**!addword #** - Adds a word the list<br>
+**!delword** - Removes/deletes word from the list<br>
+**!listwords**  - Displays the word list<br>
+
+**Optional:**<br> Regex patterns can also be added to autokick_patterns.txt
+A autokick.log file is also kept.
+
 ## backfire.py
 This is an extension plugin for minqlx to slap/punish players that do team damage<br>
 This works similar to a reverse vampiric effect.<br>
