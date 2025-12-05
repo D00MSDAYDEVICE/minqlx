@@ -3,6 +3,14 @@ Collection of plugins for Quake Live
 
 Add to your server's minqlx-plugins folder
 
+## afkplus.py
+This plugin expands on iouonegirl's AFK plugin found here:<br>
+# https://github.com/dsverdlo/minqlx-plugins.<br>
+
+`qlx_afk_enable_punishment 1` - Works as original
+`qlx_afk_enable_punishment 0` - Specstates player immediately upon value of:
+`qlx_afk_detection_seconds`
+
 ## autokick.py
 This plugin will automatically kick users (after 1 warning) for using words added to the word list.<br>
 <br>
