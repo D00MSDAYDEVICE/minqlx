@@ -8,8 +8,10 @@ This plugin expands on iouonegirl's AFK plugin found here:<br>
 https://github.com/dsverdlo/minqlx-plugins.<br>
 
 `qlx_afk_enable_punishment 1` - Works as original<br>
-`qlx_afk_enable_punishment 0` - Specstates player immediately upon value of:<br>
+`qlx_afk_enable_punishment 0` - Spectates player immediately upon value of:<br>
 `qlx_afk_detection_seconds`
+
+Gives admins the choice of an immediate move to spectate without waiting for a death
 
 ## autokick.py
 This plugin will automatically kick users (after 1 warning) for using words added to the word list.<br>
