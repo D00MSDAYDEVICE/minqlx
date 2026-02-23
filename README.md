@@ -29,6 +29,13 @@ This plugin will automatically kick users (after 1 warning) for using words adde
 **!delword** - Removes/deletes word from the list<br>
 **!listwords**  - Displays the word list<br>
 
+**CVARS:**<br>
+`qlx_autokickWarnings`  - number of warnings before kick <br>
+`qlx_autokickMode` - Settings:<br>
+kick   - warn N times then kick (original behavior)<br>
+warn   - suppress message and notify the player, never kick<br>
+silent - suppress message with no notification at all
+
 **Optional:**<br> Regex patterns can also be added to autokick_patterns.txt<br>
 An autokick.log file is also kept.
 
