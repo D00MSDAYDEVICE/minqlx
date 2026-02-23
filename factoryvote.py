@@ -26,11 +26,12 @@ import time
 
 class factoryvote(minqlx.Plugin):
     def __init__(self):
-        self.version = "1.4"
-        self.add_command("factoryvote", self.cmd_factoryvote, 3)
-        self.add_command("fv", self.cmd_factoryvote, 3)
-        self.add_command("fvv", self.cmd_version, 3)
+        self.version = "1.5"
+        self.add_command("factoryvote", self.cmd_factoryvote, 0)
+        self.add_command("fv", self.cmd_factoryvote, 0)
+        self.add_command("fvv", self.cmd_version, 0)
         self.add_command("factory", self.cmd_factory, 0)
+        self.add_command("check", self.cmd_check, 0)
 
         self.factories = self.load_factories()
         self.selected_factory = None
@@ -61,6 +62,25 @@ class factoryvote(minqlx.Plugin):
             player.tell("^3Current loaded factory:^7 {}".format(self.selected_factory))
         else:
             player.tell("^3No factory has been selected yet.")
+
+    def cmd_check(self, player, msg, channel):
+        try:
+            server_factory = self.game.factory
+        except Exception:
+            server_factory = None
+
+        if server_factory:
+            player.tell("^3Current Factory (server):^7 {}".format(server_factory))
+        else:
+            player.tell("^1Could not retrieve current factory from server.")
+
+        if self.selected_factory:
+            if self.selected_factory.lower() == (server_factory or "").lower():
+                player.tell("^2Plugin selected factory matches the server factory.")
+            else:
+                player.tell("^3Plugin selected factory:^7 {} ^3(differs from server)".format(self.selected_factory))
+        else:
+            player.tell("^3No factory selected via plugin yet.")
 
     def cmd_factoryvote(self, player, msg, channel):
         if self.factories is None:
