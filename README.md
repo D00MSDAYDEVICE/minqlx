@@ -13,6 +13,14 @@ https://github.com/dsverdlo/minqlx-plugins.<br>
 
 Gives admins the choice of an immediate move to spectate without waiting for a death
 
+## aliasesplus.py
+Modified aliases.py to list player aliases without lagging the server.<br>
+Results are displayed in chunks and/or limited (configurable)<br>
+**CVARS:**<br>
+`qlx_aliasesmode "limit"`   - limit or chunk<br>
+`qlx_limitresults "10"`     - number of results to show<br>
+`qlx_chunktime "500"`       - delay in ms between chunk sends
+
 ## autokick.py
 This plugin will automatically kick users (after 1 warning) for using words added to the word list.<br>
 <br>
