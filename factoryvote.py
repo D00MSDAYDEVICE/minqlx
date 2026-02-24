@@ -41,10 +41,19 @@ class factoryvote(minqlx.Plugin):
         player.tell("^3FactoryVote Plugin Version:^7 {}".format(self.version))
 
     def load_factories(self):
-        factories_file = os.path.join(self.get_cvar("fs_basepath"), "baseq3", "factories.txt")
-        if not os.path.isfile(factories_file):
-            self.logger.warning("factories.txt not found in baseq3.")
+        primary = os.path.join(self.get_cvar("fs_basepath"), "baseq3", "factories.txt")
+        fallback = os.path.join(os.path.dirname(os.path.abspath(__file__)), "factories.txt")
+
+        if os.path.isfile(primary):
+            factories_file = primary
+            self.logger.info("factories.txt found in baseq3.")
+        elif os.path.isfile(fallback):
+            factories_file = fallback
+            self.logger.info("factories.txt not found in baseq3, using minqlx-plugins folder.")
+        else:
+            self.logger.warning("factories.txt not found in baseq3 or minqlx-plugins folder.")
             return None
+
         with open(factories_file, "r") as f:
             factories = [line.strip() for line in f if line.strip()]
         if not factories:
