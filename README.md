@@ -73,6 +73,19 @@ Using without a number will list the factories.<br>
 **!factory** - Shows current factory<br>
 **!check**  - Checks what factory is set on both the server and plugin<br>
 **!fvv**  - Displays plugin version number
+**!restorecfg**  - Reset cvars back to defaults (restore.cfg)
+
+`ql_restorecfg_perm 2` (default: 2) Permission Level to use !restorecfg
+
+PER-FACTORY CONFIG SUPPORT:
+ When a factory vote passes, the plugin will look for a matching .cfg file in
+ the minqlx-plugins folder.
+
+   Example:  factory "ctf"  →  looks for  <plugins_dir>/ctf.cfg
+             factory "ca"   →  looks for  <plugins_dir>/ca.cfg
+
+If the file exists, it is executed as a server console command before the map change/factory update.
+This is useful for updating things like sv_mappoolfile to change the rotating maps for that mode.
 
 ## lastmaps.py<br>
 Lists the last 5 played maps<br>
