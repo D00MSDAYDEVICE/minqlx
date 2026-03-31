@@ -81,8 +81,9 @@ PER-FACTORY CONFIG SUPPORT:<br>
  When a factory vote passes, the plugin will look for a matching .cfg file in
  the minqlx-plugins folder.<br>
 <br>
-   Example:  factory "ctf"  →  looks for  <plugins_dir>/ctf.cfg<br>
-             factory "ca"   →  looks for  <plugins_dir>/ca.cfg<br>
+   Example:<br>
+   factory "ctf"  →  looks for  <plugins_dir>/ctf.cfg<br>
+   factory "ca"   →  looks for  <plugins_dir>/ca.cfg<br>
 
 If the file exists, it is executed as a server console command before the map change/factory update.<br>
 This is useful for updating things like sv_mappoolfile to change the rotating maps for that mode.
