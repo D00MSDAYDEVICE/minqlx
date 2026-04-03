@@ -18,7 +18,7 @@ import minqlx
 import time
 import threading
 
-VERSION = "v1.0"
+VERSION = "v1.1"
 
 # CVAR names
 VAR_WARNING = "qlx_afk_warning_seconds"
@@ -167,9 +167,10 @@ class afkplus(minqlx.Plugin):
                 self.move_to_spectator(player)
             return
 
-        # If punishment enabled
-        self.punished.append(player)
-        self.start_punishment_loop(player)
+        # If punishment enabled — only start a new loop if not already punishing
+        if player not in self.punished:
+            self.punished.append(player)
+            self.start_punishment_loop(player)
 
     # ------------------------------
     #     PUNISHMENT LOOP
