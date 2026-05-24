@@ -1,16 +1,16 @@
 # minqlx plugins
 Collection of plugins for Quake Live - Add to your server's minqlx-plugins folder<br>
 <br>
-[afkplus](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#afkpluspy)
-[aliasesplus](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#aliasespluspy)
-[autokick](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#autokickpy)
-[backfire](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#backfirepy)
-[factoryvote](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#factoryvotepy)
-[lastmaps](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#lastmapspy)
-[livescoreboard](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#livescoreboardpy)
-[mapmanager](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#mapmanagerpy)
-[motd (replacement)](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#motdpy-replacement)
-[namesplus](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#namespluspy-replaces-namespy)
+[afkplus](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#afkpluspy)<br>
+[aliasesplus](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#aliasespluspy)<br>
+[autokick](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#autokickpy)<br>
+[backfire](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#backfirepy)<br>
+[factoryvote](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#factoryvotepy)<br>
+[lastmaps](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#lastmapspy)<br>
+[livescoreboard](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#livescoreboardpy)<br>
+[mapmanager](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#mapmanagerpy)<br>
+[motd (replacement)](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#motdpy-replacement)<br>
+[namesplus](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#namespluspy-replaces-namespy)<br>
 <br>
 ## afkplus.py
 This plugin expands on iouonegirl's AFK plugin found here:<br>
