@@ -89,11 +89,11 @@ If the file exists, it is executed as a server console command before the map ch
 This is useful for updating things like sv_mappoolfile to change the rotating maps for that mode.
 
 ## lastmaps.py<br>
-Lists the last 5 played maps<br>
+Shows a lists of the last 5 played maps<br>
 Useful to avoid voting overplayed maps.<br>
 <br>
 **Commands:**<br>
-**!lm**<br>
+**!lm** - Lists the last 5 played maps<br>
 **!lmv**  - Displays plugin version number
 
 ## livescoreboard.py<br>
@@ -128,7 +128,7 @@ Made this for a quick and dirty way to import scores from other games into OBS.<
 Manages map rotation, enforces cooldowns on recently played maps, and tracks off-pool callvotes too. Also replaces/includes features of lastmaps.py
 <br><br>
 **Commands:**<br>
-**!lm**<br>
+**!lm** - Lists the last 5 played maps<br>
 **!mappool**  - Shows the next maps in rotation, marking which will be offered as vote candidates. Notes if the current map is off-pool.<br>
 **!skipmaps** - Advance the rotation pointer by n steps (default 1). Useful for skipping unwanted upcoming maps. (Admin only)<br>
 **!resetrotation** - Reload mappool.txt from disk and resync the rotation pointer to the current map. Use after editing mappool.txt without restarting. (Admin only)<br><br>
