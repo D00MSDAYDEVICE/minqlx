@@ -1,8 +1,17 @@
 # minqlx plugins
-Collection of plugins for Quake Live
-
-Add to your server's minqlx-plugins folder
-
+Collection of plugins for Quake Live - Add to your server's minqlx-plugins folder<br>
+<br>
+[afkplus](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#afkpluspy)
+[aliasesplus](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#aliasespluspy)
+[autokick](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#autokickpy)
+[backfire](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#backfirepy)
+[factoryvote](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#factoryvotepy)
+[lastmaps](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#lastmapspy)
+[livescoreboard](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#livescoreboardpy)
+[mapmanager](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#mapmanagerpy)
+[motd (replacement)](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#motdpy-replacement)
+[namesplus](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#namespluspy-replaces-namespy)
+<br>
 ## afkplus.py
 This plugin expands on iouonegirl's AFK plugin found here:<br>
 https://github.com/dsverdlo/minqlx-plugins.<br>
