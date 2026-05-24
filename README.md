@@ -12,7 +12,7 @@ Collection of plugins for Quake Live - Add to your server's minqlx-plugins folde
 [motd (replacement)](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#motdpy-replacement)<br>
 [namesplus](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#namespluspy-replaces-namespy)<br>
 <br>
-## afkplus.py [Download](https://raw.githubusercontent.com/D00MSDAYDEVICE/minqlx/refs/heads/main/afkplus.py)
+## afkplus.py [right-click & save](https://raw.githubusercontent.com/D00MSDAYDEVICE/minqlx/refs/heads/main/afkplus.py)
 This plugin expands on iouonegirl's AFK plugin found here:<br>
 https://github.com/dsverdlo/minqlx-plugins.<br>
 
