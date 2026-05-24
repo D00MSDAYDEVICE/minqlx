@@ -115,14 +115,32 @@ Made this for a quick and dirty way to import scores from other games into OBS.<
 
 
 **CVARS for configs:**<br>
-qlx_scorerefresh "20" - time in seconds to auto-refresh<br>
-qlx_livescorecolor<br>
-qlx_livescorebgcolor<br>
-qlx_lstitle<br>
-qlx_lsredname<br>
-qlx_lsbluename<br>
-qlx_lspath<br>
-qlx_lscustom<br>
+`qlx_scorerefresh` "20" - time in seconds to auto-refresh<br>
+`qlx_livescorecolor`<br>
+`qlx_livescorebgcolor`<br>
+`qlx_lstitle`<br>
+`qlx_lsredname`<br>
+`qlx_lsbluename`<br>
+`qlx_lspath`<br>
+`qlx_lscustom`<br>
+
+## mapmanager.py<br>
+Manages map rotation, enforces cooldowns on recently played maps, and tracks off-pool callvotes too. Also replaces/includes features of lastmaps.py
+<br>
+**Commands:**<br>
+**!lm**<br>
+**!mappool**  - Shows the next maps in rotation, marking which will be offered as vote candidates. Notes if the current map is off-pool.<br>
+**!skipmaps** - Advance the rotation pointer by n steps (default 1). Useful for skipping unwanted upcoming maps. (Admin only)<br>
+**!resetrotation** - Reload mappool.txt from disk and resync the rotation pointer to the current map. Use after editing mappool.txt without restarting. (Admin only)<br>
+**!mmv** - Display the plugin version.<br>
+**!mmdebug** - Dump full plugin state: pool contents, rotation index, map history, off-pool maps, cvar path, and internal flags. Useful for diagnosing issues.<br>
+<br>
+**CVARS for configs:**<br>
+`mapmanager_mappool` - Full path to mappool.txt including filename<br>
+`mapmanager_history_size` "5" - Number of recently played maps to block from voting<br>
+`mapmanager_vote_maps` "3" - Number of maps shown as candidates in end-of-game votemap<br>
+`manager_allownewvotes` "1"  - Allow callvote map after a vote already passed this round, 0 = block it<br>
+
 
 ## motd.py (replacement)<br>
 Extended motd to multiple lines to overcome character length and format limitations/ease of use<br>
@@ -148,8 +166,8 @@ Names now persist between reconnects until a !clear `<player ID #>` is performed
 > set qlx_plugins "plugin_manager, essentials, motd, permission, ban, silence, clan, namesplus, log, workshop"<br>
 
 Additional settings:<br>
-qlx_enforceAdminName<br>
-qlx_enforceSteamName<br>
+`qlx_enforceAdminName`<br>
+`qlx_enforceSteamName`<br>
 
 **Commands:**<br>
 **!name** `<name>` - Player sets their own name<br>
