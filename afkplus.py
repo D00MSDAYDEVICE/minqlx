@@ -1,5 +1,5 @@
 # This is a plugin created by Doomsday for House of Blud
-# Heavily borrowed code form iouonegirl's AFK plugin found here:
+# Heavily borrowed code from iouonegirl's AFK plugin found here:
 # https://github.com/dsverdlo/minqlx-plugins
 #
 # You are free to modify this plugin
@@ -15,10 +15,10 @@
 # If qlx_afk_enable_punishment is 0, player will be automatically spec'd at time set
 
 import minqlx
-import time
 import threading
+import time
 
-VERSION = "v1.1"
+VERSION = "v1.3"
 
 # CVAR names
 VAR_WARNING = "qlx_afk_warning_seconds"
@@ -30,9 +30,9 @@ VAR_ENABLE_PUN = "qlx_afk_enable_punishment"
 CHECK_INTERVAL = 0.33
 
 
-class afkplus(minqlx.Plugin):
+class afkp(minqlx.Plugin):
     def __init__(self):
-        super().__init__()
+        super(afkp, self).__init__()
 
         # Create CVARs if missing
         self.set_cvar_once(VAR_WARNING, "10")
@@ -40,17 +40,12 @@ class afkplus(minqlx.Plugin):
         self.set_cvar_once(VAR_PUT_SPEC, "1")
         self.set_cvar_once(VAR_ENABLE_PUN, "1")
 
-        # Read CVARs
-        self.warning_time = int(self.get_cvar(VAR_WARNING))
-        self.detect_time = int(self.get_cvar(VAR_DETECTION))
-        self.put_to_spec = int(self.get_cvar(VAR_PUT_SPEC))
-        self.enable_punishment = int(self.get_cvar(VAR_ENABLE_PUN))
-
         # steam_id → [last_position, inactive_seconds]
         self.positions = {}
 
-        # AFK players currently being punished
-        self.punished = []
+        # steam_ids currently being punished
+        self._punished_sids = set()
+        self._punished_lock = threading.Lock()
 
         # Thread control
         self.running = False
@@ -62,23 +57,62 @@ class afkplus(minqlx.Plugin):
         self.add_hook("death", self.handle_death)
         self.add_hook("unload", self.handle_unload)
 
+    # --------------------------------------------------
+    #     Helpers — read cvars live so runtime changes
+    #     take effect without a reload
+    # --------------------------------------------------
+
+    @property
+    def warning_time(self):
+        try:
+            return int(self.get_cvar(VAR_WARNING))
+        except Exception:
+            return 10
+
+    @property
+    def detect_time(self):
+        try:
+            return int(self.get_cvar(VAR_DETECTION))
+        except Exception:
+            return 20
+
+    @property
+    def put_to_spec(self):
+        try:
+            return int(self.get_cvar(VAR_PUT_SPEC))
+        except Exception:
+            return 1
+
+    @property
+    def enable_punishment(self):
+        try:
+            return int(self.get_cvar(VAR_ENABLE_PUN))
+        except Exception:
+            return 1
+
     # ------------------------------
     #     ROUND START / END
     # ------------------------------
 
     def handle_round_start(self, number):
         teams = self.teams()
-        for p in teams["red"] + teams["blue"]:
-            self.positions[p.steam_id] = [p.position(), 0]
+        for p in teams.get("red", []) + teams.get("blue", []):
+            try:
+                pos = p.position()
+            except Exception:
+                pos = None
+            self.positions[p.steam_id] = [pos, 0]
 
         self.running = True
-        self.punished = []
+        with self._punished_lock:
+            self._punished_sids.clear()
 
         self.start_monitor_thread()
 
     def handle_round_end(self, number):
         self.running = False
-        self.punished = []
+        with self._punished_lock:
+            self._punished_sids.clear()
         self.positions = {}
 
     # ------------------------------
@@ -90,39 +124,49 @@ class afkplus(minqlx.Plugin):
 
         if new == "spectator":
             self.positions.pop(sid, None)
-            if player in self.punished:
-                self.punished.remove(player)
+            with self._punished_lock:
+                self._punished_sids.discard(sid)
             return
 
         if new in ["red", "blue"]:
-            self.positions[sid] = [player.position(), 0]
+            try:
+                pos = player.position()
+            except Exception:
+                pos = None
+            self.positions[sid] = [pos, 0]
 
     def handle_death(self, player, killer, data):
         sid = player.steam_id
         self.positions.pop(sid, None)
-        if player in self.punished:
-            self.punished.remove(player)
+        with self._punished_lock:
+            self._punished_sids.discard(sid)
 
     def handle_unload(self, plugin):
         if plugin == self.__class__.__name__:
             self.running = False
-            self.punished = []
+            with self._punished_lock:
+                self._punished_sids.clear()
 
     # ------------------------------
-    #     THREAD LOOP
+    #     MONITOR THREAD
     # ------------------------------
 
     @minqlx.thread
     def start_monitor_thread(self):
-        while self.running and self.game and self.game.state == "in_progress":
+        while self.running and self.game and getattr(self.game, "state", None) == "in_progress":
             teams = self.teams()
-
-            for p in teams["red"] + teams["blue"]:
-                if not p.is_alive:
+            for p in teams.get("red", []) + teams.get("blue", []):
+                try:
+                    if not p.is_alive:
+                        continue
+                except Exception:
                     continue
 
                 sid = p.steam_id
-                cur_pos = p.position()
+                try:
+                    cur_pos = p.position()
+                except Exception:
+                    cur_pos = None
 
                 if sid not in self.positions:
                     self.positions[sid] = [cur_pos, 0]
@@ -133,18 +177,21 @@ class afkplus(minqlx.Plugin):
                     secs += CHECK_INTERVAL
                     self.positions[sid] = [cur_pos, secs]
 
-                    # Warning
-                    if secs >= self.warning_time and secs - CHECK_INTERVAL < self.warning_time:
+                    wt = self.warning_time
+                    dt = self.detect_time
+
+                    # Warning threshold crossing
+                    if secs >= wt and secs - CHECK_INTERVAL < wt:
                         self.warn_afk(p)
 
-                    # Detection
-                    if secs >= self.detect_time and secs - CHECK_INTERVAL < self.detect_time:
+                    # Detection threshold crossing
+                    if secs >= dt and secs - CHECK_INTERVAL < dt:
                         self.handle_afk_detected(p)
-
                 else:
                     self.positions[sid] = [cur_pos, 0]
-                    if p in self.punished:
-                        self.punished.remove(p)
+                    # Player moved — cancel any ongoing punishment
+                    with self._punished_lock:
+                        self._punished_sids.discard(sid)
 
             time.sleep(CHECK_INTERVAL)
 
@@ -154,55 +201,116 @@ class afkplus(minqlx.Plugin):
 
     @minqlx.next_frame
     def warn_afk(self, player):
-        msg = f"You have been inactive for {self.warning_time} seconds..."
-        minqlx.send_server_command(player.id, f'cp "{msg}"')
+        msg = "You have been inactive for {} seconds...".format(self.warning_time)
+        try:
+            minqlx.send_server_command(player.id, 'cp "{}"'.format(msg))
+        except Exception:
+            pass
 
+    # Called from the monitor thread — push all game writes to next_frame
     def handle_afk_detected(self, player):
-        secs = int(self.positions[player.steam_id][1])
-        self.msg(f"^1{player.name}^7 has been inactive for ^1{secs}^7 seconds!")
+        sid = player.steam_id
+        secs = int(self.positions[sid][1]) if sid in self.positions else 0
+        client_id = player.id
 
-        # If punishment is disabled
+        @minqlx.next_frame
+        def announce():
+            self.msg("^1{}^7 has been inactive for ^1{}^7 seconds!".format(player.name, secs))
+
+        announce()
+
         if not self.enable_punishment:
             if self.put_to_spec:
-                self.move_to_spectator(player)
+                self.move_to_spectator(client_id, sid)
             return
 
-        # If punishment enabled — only start a new loop if not already punishing
-        if player not in self.punished:
-            self.punished.append(player)
-            self.start_punishment_loop(player)
+        with self._punished_lock:
+            if sid in self._punished_sids:
+                return  # already being punished
+            self._punished_sids.add(sid)
+
+        self.start_punishment_loop(client_id, sid)
 
     # ------------------------------
     #     PUNISHMENT LOOP
     # ------------------------------
 
     @minqlx.thread
-    def start_punishment_loop(self, player, damage=10, delay=0.5):
+    def start_punishment_loop(self, client_id, sid, damage=10, delay=0.5):
+        """
+        Repeatedly slap the AFK player until they move, die, or the round ends.
+        Uses client_id + steam_id for safe re-resolution rather than storing
+        a stale Player object.
+        """
         while (
             self.running
             and self.game
-            and self.game.state == "in_progress"
-            and player in self.punished
+            and getattr(self.game, "state", None) == "in_progress"
         ):
-            if not player.is_alive or player.health < damage:
-                self.punished.remove(player)
-                if self.put_to_spec:
-                    self.move_to_spectator(player)
+            with self._punished_lock:
+                if sid not in self._punished_sids:
+                    break  # movement or death cleared the flag
+
+            # Re-resolve the player on each iteration to guard against
+            # disconnect / slot reuse
+            try:
+                p = self.player(client_id)
+            except Exception:
+                p = None
+
+            if not p or p.steam_id != sid:
+                # Player gone or slot recycled
+                with self._punished_lock:
+                    self._punished_sids.discard(sid)
                 break
 
-            # Subtract health
-            @minqlx.next_frame
-            def do_damage(p, d): p.health -= d
-            do_damage(player, damage)
+            try:
+                alive = p.is_alive
+                hp = p.health
+            except Exception:
+                alive = False
+                hp = 0
 
-            # Update message
-            sid = player.steam_id
-            secs = int(self.positions[sid][1]) if sid in self.positions else self.detect_time
-            msg = f"^1Inactive for {secs} seconds!^7\nMove or keep taking damage!"
-            minqlx.send_server_command(player.id, f'cp "{msg}"')
+            if not alive or hp <= damage:
+                with self._punished_lock:
+                    self._punished_sids.discard(sid)
+                if self.put_to_spec:
+                    self.move_to_spectator(client_id, sid)
+                break
+
+            # Deal damage — slap via console command (safe from thread via engine queue)
+            self.apply_punishment(client_id, sid, damage)
 
             time.sleep(delay)
 
+        # Final cleanup
+        with self._punished_lock:
+            self._punished_sids.discard(sid)
+
     @minqlx.next_frame
-    def move_to_spectator(self, player):
-        player.put("spectator")
+    def apply_punishment(self, client_id, sid, damage):
+        """Slap the player from the game frame."""
+        try:
+            p = self.player(client_id)
+        except Exception:
+            return
+        if not p or p.steam_id != sid:
+            return
+        try:
+            minqlx.console_command("slap {} {}".format(client_id, damage))
+        except Exception:
+            pass
+
+    @minqlx.next_frame
+    def move_to_spectator(self, client_id, sid):
+        """Move player to spec from the game frame, with identity check."""
+        try:
+            p = self.player(client_id)
+        except Exception:
+            return
+        if not p or p.steam_id != sid:
+            return
+        try:
+            p.put("spectator")
+        except Exception:
+            pass
