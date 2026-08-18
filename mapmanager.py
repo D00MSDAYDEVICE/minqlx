@@ -35,7 +35,7 @@ MAPPOOL_PATH = "/home/ql/qlds-27960/baseq3/mappool.txt"
 
 class mapmanager(minqlx.Plugin):
     def __init__(self):
-        self.version = "1.3.0"
+        self.version = "1.3.2"
 
         # ── cvars ──────────────────────────────────────────────────────────
         self.set_cvar_once("mapmanager_history_size", "5")
@@ -55,7 +55,7 @@ class mapmanager(minqlx.Plugin):
         self.add_command("mappool",             self.cmd_mappool)
         self.add_command("skipmaps",            self.cmd_skipmaps,      5)  # admin
         self.add_command("resetrotation",       self.cmd_resetrotation, 5)  # admin
-        self.add_command("mmv",                 self.cmd_version,       5)  # admin
+        self.add_command("mmv",                 self.cmd_version)
         self.add_command("mmdebug",             self.cmd_mmdebug,       5)  # admin
 
         # ── state ──────────────────────────────────────────────────────────
@@ -326,28 +326,37 @@ class mapmanager(minqlx.Plugin):
     # ═══════════════════════════════════════════════════════════════════════
 
     def cmd_lastmaps(self, player, msg, channel):
-        """!lm / !lastmaps — show recently played maps."""
+        """!lm / !lastmaps — show recently played maps and next 5 upcoming."""
         size    = self._history_size()
         recent  = self.map_history[-size:]
         blocked = self._blocked_maps()
 
         if not recent:
             player.tell("^1No maps have been tracked since server restart.")
-            return
-
-        parts = []
-        for m in recent:
-            off_tag = "^8*^7" if m in self.off_pool_maps else ""
-            if m in blocked:
-                parts.append("^1{}{}^7".format(m, off_tag))   # red = blocked
-            else:
-                parts.append("^2{}{}^7".format(m, off_tag))   # green = available
-        player.tell(
-            "^6Last {} maps:^7 {}  "
-            "^8(^1red^8=blocked ^2green^8=available ^8*^8=off-pool)".format(
-                size, ", ".join(parts)
+        else:
+            parts = []
+            for m in recent:
+                off_tag = "^7*" if m in self.off_pool_maps else ""
+                if m in blocked:
+                    parts.append("^1{}{}^7".format(m, off_tag))   # red = blocked
+                else:
+                    parts.append("^2{}{}^7".format(m, off_tag))   # green = available
+            player.tell(
+                "^6Last {} maps:^7 {}  "
+                "^7(^1red^7=blocked ^2green^7=available ^7*=off-pool)".format(
+                    size, ", ".join(parts)
+                )
             )
-        )
+
+        # Second line: next 5 upcoming pool maps
+        upcoming = self._upcoming_maps(count=5)
+        if upcoming:
+            player.tell("^6Next maps:^7 {}".format(
+                "^7, ".join("^2{}".format(m) for m in upcoming)
+            ))
+        elif self.pool:
+            player.tell("^6Next maps: ^1none available "
+                        "^7(all blocked by recent history)")
 
     def cmd_mappool(self, player, msg, channel):
         """!mappool — show the next maps in rotation and their block status."""
