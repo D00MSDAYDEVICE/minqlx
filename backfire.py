@@ -1,6 +1,9 @@
 # This is an extension plugin for minqlx to slap/punish players that do team damage
 # This works similar to a reverse vampiric effect
 # Damage can be set to a specific amount per hit or proportional in your server config
+# Essentially a team-damage deterrent system — log the incident, then reflect a portion of the damage the shooter just dealt back onto
+# themselves, non-lethally, with an audible cue.
+
 # Until the master minqlx is updated, Shino's version is required to be compiled for your server here: https://github.com/mgaertne/minqlx
 # His fork has a hook for damage
 
