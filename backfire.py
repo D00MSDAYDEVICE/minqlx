@@ -1,6 +1,9 @@
 # This is an extension plugin for minqlx to slap/punish players that do team damage
 # This works similar to a reverse vampiric effect
 # Damage can be set to a specific amount per hit or proportional in your server config
+# Essentially a team-damage deterrent system — log the incident, then reflect a portion of the damage the shooter just dealt back onto
+# themselves, non-lethally, with an audible cue.
+
 # Until the master minqlx is updated, Shino's version is required to be compiled for your server here: https://github.com/mgaertne/minqlx
 # His fork has a hook for damage
 
@@ -24,8 +27,12 @@
 
 import os
 import time
+import threading
 import minqlx
 from minqlx import Plugin, Player
+
+# How often the buffered log lines are flushed to disk, in seconds.
+LOG_FLUSH_INTERVAL = 5
 
 
 class backfire(Plugin):
@@ -34,9 +41,10 @@ class backfire(Plugin):
 
         self.add_hook("game_countdown", self.handle_game_countdown)
         self.add_hook("damage", self.handle_damage_event)
+        self.add_hook("unload", self.handle_unload)
         self.add_command("bfv", self.cmd_bfv)
 
-        self.version = "1.0"
+        self.version = "1.1"
 
         # CVars
         self.set_cvar_once("qlx_backfireSlapAmount", "10")
@@ -52,8 +60,22 @@ class backfire(Plugin):
         os.makedirs(self.log_dir, exist_ok=True)
         self.backfire_log_path = os.path.join(self.log_dir, "backfire.log")
 
+        # Buffered logging: hot path only appends to this list, a background
+        # thread periodically flushes it to disk so we never do blocking
+        # file I/O on the game thread during a damage event.
+        self._log_lock = threading.Lock()
+        self._log_buffer = []
+        self._stop_event = threading.Event()
+        self._flush_worker()
+
+    def handle_unload(self, plugin):
+        if plugin != self.__class__.__name__:
+            return
+        self._stop_event.set()
+        self._flush_log()
+
     def handle_game_countdown(self):
-        self.team_damages = {}
+        pass
 
     def handle_damage_event(self, target, attacker, dmg, dflags, means_of_death):
         if not self.game or self.game.state != "in_progress":
@@ -86,8 +108,25 @@ class backfire(Plugin):
             target.name, target.steam_id,
             dmg
         )
-        with open(self.backfire_log_path, "a") as f:
-            f.write(log_line)
+        with self._log_lock:
+            self._log_buffer.append(log_line)
+
+    @minqlx.thread
+    def _flush_worker(self):
+        while not self._stop_event.wait(LOG_FLUSH_INTERVAL):
+            self._flush_log()
+
+    def _flush_log(self):
+        with self._log_lock:
+            if not self._log_buffer:
+                return
+            lines, self._log_buffer = self._log_buffer, []
+
+        try:
+            with open(self.backfire_log_path, "a") as f:
+                f.writelines(lines)
+        except OSError as e:
+            minqlx.log_exception(e)
 
     def cmd_bfv(self, player, msg, channel):
         channel.reply("^2Backfire Plugin v{}".format(self.version))
