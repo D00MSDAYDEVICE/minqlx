@@ -1,9 +1,6 @@
 # This is an extension plugin for minqlx to slap/punish players that do team damage
 # This works similar to a reverse vampiric effect
 # Damage can be set to a specific amount per hit or proportional in your server config
-# Essentially a team-damage deterrent system — log the incident, then reflect a portion of the damage the shooter just dealt back onto
-# themselves, non-lethally, with an audible cue.
-
 # Until the master minqlx is updated, Shino's version is required to be compiled for your server here: https://github.com/mgaertne/minqlx
 # His fork has a hook for damage
 
@@ -44,7 +41,7 @@ class backfire(Plugin):
         self.add_hook("unload", self.handle_unload)
         self.add_command("bfv", self.cmd_bfv)
 
-        self.version = "1.1"
+        self.version = "1.2"
 
         # CVars
         self.set_cvar_once("qlx_backfireSlapAmount", "10")
@@ -87,6 +84,16 @@ class backfire(Plugin):
         if target.team != attacker.team or target.id == attacker.id:
             return
 
+        # NOTE on g_friendlyFire interaction (verified against mgaertne's
+        # hooks.c): My_G_Damage() calls the engine's G_Damage() first, then
+        # calls DamageDispatcher() with the *same* local `damage` value that
+        # was passed in -- it is not read back from the target's actual
+        # health loss. That means `dmg` here is always the weapon's intended
+        # damage, regardless of whether g_friendlyFire suppressed the real
+        # health change. Both the proportional and fixed slap calculations
+        # below are already correct with g_friendlyFire 0 for that reason --
+        # no special-casing needed. We only use the cvar to annotate the log
+        # with whether damage was actually applied to the victim or not.
         self.log_team_damage(target, attacker, dmg)
 
         if attacker.health <= 0:
@@ -102,11 +109,17 @@ class backfire(Plugin):
             self.play_sound("sound/feedback/hit_teammate.ogg", player=attacker)
 
     def log_team_damage(self, target, attacker, dmg):
-        log_line = "[{}] {} ({}) hit {} ({}) for {} damage\n".format(
+        # Read live rather than cached: a cheap local cvar lookup, and it
+        # lets an admin flip g_friendlyFire mid-map via rcon without the
+        # log going stale until the next round.
+        ff_on = self.get_cvar("g_friendlyFire", bool)
+        status = "applied" if ff_on else "suppressed (FF off)"
+
+        log_line = "[{}] {} ({}) hit {} ({}) for {} damage [{}]\n".format(
             time.strftime("%Y-%m-%d %H:%M:%S"),
             attacker.name, attacker.steam_id,
             target.name, target.steam_id,
-            dmg
+            dmg, status
         )
         with self._log_lock:
             self._log_buffer.append(log_line)
