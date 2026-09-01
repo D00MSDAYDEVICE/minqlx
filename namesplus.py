@@ -1,14 +1,17 @@
-# Updated by Doomsday 16 February 2026 - Added !enforce command
-# Updated by Doomsday 16 August 2025 - Fixed tab errors
-# Updated by Doomsday 13 July 2025 - qlx_enforceAdminName 1 now also enforces names at game start
-# Updated by Doomsday 27 May 2025 - Added setting by steamid
+# Modified names.py with added ability for admins to change players names
+# Useful for those with blank names or lazy aliasing guys during tournaments :)
+
+# Updated by Doomsday - v6.1 - Fixed NameError crash in handle_userinfo (stored_name
+#   was referenced but never defined), restored the missing game_start hook
+#   registration (handle_game_start existed but was never wired up, so
+#   game-start enforcement was dead code), and added an automatic check/unload
+#   for the legacy names.py plugin, which conflicts with this one.
+# Updated  16 March 2026 - Added hook to game start & other fixes
+# Updated  13 July 2025 - qlx_enforceAdminName 1 now also enforces names at game start
+# Updated  27 May 2025 - Added setting by steamid
+# Updates   6 May 2025 - Names now persist between reconnects until a !clear <player id> is performed.
 # Added qlx_enforceAdminName for improved persistence
 # Added !listnames
-#
-# Edited by Doomsday 4 May 2025 - May the 4th be with you.
-# Added ability for admins to change players names
-# Useful for those with blank names or lazy aliasing guys during tournaments :)
-# Updates 6 May 2025 - Names now persist between reconnects until a !clear <player id> is performed.
 
 # minqlx - Extends Quake Live's dedicated server with extra functionality and scripting.
 # Copyright (C) 2015 Mino <mino@minomino.org>
@@ -37,26 +40,74 @@ _re_remove_excessive_colors = re.compile(r"(?:\^.)+(\^.)")
 _name_key = "minqlx:players:{}:colored_name"
 LOG_FILE = os.path.join(os.path.dirname(__file__), "namesplus.log")
 
-VERSION = "1.6.0"
+VERSION = "6.1"
+
+# Name of the legacy plugin this one replaces. Both hook player_loaded/userinfo
+# to force a stored name onto the player, and both write to the same
+# "minqlx:players:<steamid>:colored_name" DB key, so running them together
+# causes the two plugins to fight over (and corrupt) each other's state.
+_CONFLICTING_PLUGIN = "names"
 
 class namesplus(minqlx.Plugin):
     def __init__(self):
+        self._check_conflicting_plugin()
+
         self.add_hook("player_connect", self.handle_player_connect)
         self.add_hook("player_loaded", self.handle_player_loaded)
         self.add_hook("player_disconnect", self.handle_player_disconnect)
         self.add_hook("userinfo", self.handle_userinfo)
+        self.add_hook("game_start", self.handle_game_start)
         self.add_command("name", self.cmd_name, usage="<name>")
         self.add_command("setname", self.cmd_setname_admin, usage="<player id> <name>", permission=4)
         self.add_command("clear", self.cmd_clear_name, usage="<player id>", permission=4)
         self.add_command("npv", self.cmd_version)
         self.add_command("listnames", self.cmd_list_names, permission=3)
         self.add_command("enforce", self.cmd_enforce, permission=4)
-        
+
         self.set_cvar_once("qlx_enforceSteamName", "0")
         self.steam_names = {}
         self.name_set = False
-        
+
         self.set_cvar_once("qlx_enforceAdminName", "1")
+
+    def _check_conflicting_plugin(self):
+        """Automatically unload the legacy names.py plugin if it's already
+        active, before namesplus finishes loading.
+
+        The two plugins conflict directly: both hook player_loaded/userinfo
+        to force a stored name onto the player, and both write to the same
+        "minqlx:players:<steamid>:colored_name" DB key. This only catches the
+        case where names.py loaded *before* namesplus (earlier in
+        qlx_plugins) - if load order is reversed, names.py loads after us and
+        there's no hook here to stop that; we can only warn that qlx_plugins
+        still lists it.
+        """
+        loaded = minqlx.Plugin._loaded_plugins
+        match = next((n for n in loaded if n.lower() == _CONFLICTING_PLUGIN), None)
+
+        if match is not None:
+            try:
+                minqlx.unload_plugin(match)
+                minqlx.get_logger(self).warning(
+                    "Unloaded conflicting plugin '%s' automatically before "
+                    "loading namesplus.", match
+                )
+            except Exception as e:
+                minqlx.log_exception(self)
+                raise minqlx.PluginLoadError(
+                    f"^1namesplus^7 was not loaded: found conflicting plugin "
+                    f"^6{match}^7 loaded, and automatically unloading it "
+                    f"failed ({e.__class__.__name__}: {e}). Unload it "
+                    f"manually with ^6!unload {match}^7 and reload namesplus."
+                )
+
+        configured = {p.lower() for p in (self.get_cvar("qlx_plugins", set) or set())}
+        if _CONFLICTING_PLUGIN in configured:
+            minqlx.get_logger(self).warning(
+                "qlx_plugins still lists 'names', which conflicts with "
+                "namesplus. Remove it from the config so it isn't loaded "
+                "again on next restart."
+            )
 
     def handle_player_connect(self, player):
         self.steam_names[player.steam_id] = player.clean_name
@@ -99,9 +150,11 @@ class namesplus(minqlx.Plugin):
 
         # Enforce admin-set names if qlx_enforceAdminName is enabled
         if self.get_cvar("qlx_enforceAdminName", bool) and name_key in self.db:
-            changed["name"] = self.db[name_key]  # Restore admin-set name
+            stored_name = self.db[name_key]
+            changed["name"] = stored_name  # Restore admin-set name
+            self.name_set = True
             player.name = stored_name  # Force name update immediately
-            player.tell(f"^3Your name has been updated to: {self.db[name_key]}")  # Notify player
+            player.tell(f"^3Your name has been updated to: {stored_name}")  # Notify player
             return changed
 
         # Regular name handling
@@ -109,9 +162,11 @@ class namesplus(minqlx.Plugin):
             if name_key not in self.db:
                 self.steam_names[player.steam_id] = self.clean_text(changed["name"])
             elif self.steam_names.get(player.steam_id) == self.clean_text(changed["name"]):
-                changed["name"] = self.db[name_key]
+                stored_name = self.db[name_key]
+                changed["name"] = stored_name
+                self.name_set = True
                 player.name = stored_name  # Force name update immediately
-                player.tell(f"^3Your name has been updated to: {self.db[name_key]}")  # Notify player
+                player.tell(f"^3Your name has been updated to: {stored_name}")  # Notify player
                 return changed
             else:
                 del self.db[name_key]
