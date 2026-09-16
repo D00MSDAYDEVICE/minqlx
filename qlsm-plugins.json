@@ -42,7 +42,7 @@
     {
       "filename": "afkp.py",
       "label": "AFK Plus (legacy)",
-      "description": "Older v1.1 of AFK Plus, which reads its settings only once when loaded. Use afkplus.py instead. Don't enable both.",
+      "description": "Legacy verion of AFK Plus for older Python systems. Use afkplus.py instead. Don't enable both.",
       "runtime": "minqlx",
       "requires_qlsm_version": "1.36.0",
       "cvars": [
@@ -81,7 +81,7 @@
     {
       "filename": "aliasesplus.py",
       "label": "Aliases Plus",
-      "description": "Modified aliases.py to list player aliases without lagging the server. Results are limited or sent in chunks.",
+      "description": "Modified aliases.py (replacement) to list player aliases without lagging the server. Results are limited or sent in chunks.",
       "runtime": "minqlx",
       "requires_qlsm_version": "1.36.0",
       "commands": [
