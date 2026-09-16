@@ -1,11 +1,32 @@
 {
   "plugins": [
     {
-      "filename": "hello_qlsm.py",
-      "label": "Doomsday's Plugins",
-      "description": "Collection of plugins for Quake Live",
+      "filename": "aliasesplus.py",
+      "label": "Aliases Plus",
+      "description": "Modified aliases.py to list player aliases without lagging the server.",
       "runtime": "minqlx",
       "requires_qlsm_version": "1.30.0"
-    }
+    },
+    {
+      "filename": "autokick.py",
+      "label": "Auto Kick",
+      "description": "This plugin will automatically kick users (after 1 warning) for using words added to the word list.",
+      "runtime": "minqlx",
+      "requires_qlsm_version": "1.30.0"
+    },
+    {
+      "filename": "lastmaps.py",
+      "label": "Last Maps",
+      "description": "Shows a lists of the last 5 played maps. Useful to avoid voting overplayed maps.",
+      "runtime": "minqlx",
+      "requires_qlsm_version": "1.30.0"
+    },
+     {
+      "filename": "mapmanager.py",
+      "label": "Map Manager",
+      "description": "Manages map rotation, enforces vote cooldowns on recently played maps, and tracks off-pool callvotes too. Also replaces/includes features of lastmaps.py",
+      "runtime": "minqlx",
+      "requires_qlsm_version": "1.30.0"
+    },
   ]
 }
