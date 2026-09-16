@@ -4,14 +4,14 @@ Collection of plugins for Quake Live - Add to your server's minqlx-plugins folde
 [afkplus](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#afkpluspy)<br>
 [aliasesplus](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#aliasespluspy)<br>
 [autokick](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#autokickpy)<br>
-[backfire](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#backfirepy)<br>
+[backfire](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#backfirepy-right-click--save-)<br>
 [factoryvote](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#factoryvotepy)<br>
 [lastmaps](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#lastmapspy)<br>
 [livescoreboard](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#livescoreboardpy)<br>
 [mapmanager](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#mapmanagerpy)<br>
 [motd (replacement)](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#motdpy-replacement)<br>
 [namesplus](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#namespluspy-replaces-namespy)<br>
-[votebanplus](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#namespluspy-replaces-namespy)<br>
+[votebanplus](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#votebanpluspy-right-click--save)<br>
 <br>
 **QLSM:** this repository can be added in [QLSM](https://github.com/dngrtech/qlsm) under **Settings → Plugin Repositories** using `https://github.com/D00MSDAYDEVICE/minqlx`.
 `qlsm-plugins.json` gives QLSM each plugin's description, commands and an editable settings form (QLSM 1.36.0 or newer). See [Plugin Repositories](https://dngrtech.github.io/qlsm/operations/plugin-repositories/).<br>
@@ -200,6 +200,6 @@ Additional settings:<br>
 `qlx_votebanplusAdmin` - admin level for command usage<br>
 
 **Commands:**<br>
-**!voteban** ``<player ID #>` OR `<steam ID #>` - Bans player from call voting<br>
-**!voteunban** `<player ID #>` OR `<steam ID #>` - Unbans player from call voting<br>
+**!voteban** `<player ID #>` or `<steam ID #>` - Bans player from call voting<br>
+**!voteunban** `<player ID #>` or `<steam ID #>` - Unbans player from call voting<br>
 **!votebanlist** - Lists current vote bans<br>
