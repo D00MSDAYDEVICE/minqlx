@@ -1,0 +1,140 @@
+{
+  "label": "Live Scoreboard",
+  "description": "Writes the live score to an HTML file, for example to show it in OBS.",
+  "commands": [
+    {
+      "name": "lscheck",
+      "description": "Check that the plugin is running."
+    },
+    {
+      "name": "lsv",
+      "description": "Show the plugin version."
+    },
+    {
+      "name": "lsstyle",
+      "usage": "<1 or 2>",
+      "permission": 5,
+      "description": "Set the scoreboard style: 1 default, 2 one line."
+    },
+    {
+      "name": "lstitle",
+      "usage": "<text>",
+      "permission": 5,
+      "description": "Set the scoreboard title. Leave blank to clear."
+    },
+    {
+      "name": "lsredname",
+      "usage": "<name>",
+      "permission": 5,
+      "description": "Set the Red team name."
+    },
+    {
+      "name": "lsbluename",
+      "usage": "<name>",
+      "permission": 5,
+      "description": "Set the Blue team name."
+    },
+    {
+      "name": "lscolor",
+      "usage": "<#colorcode>",
+      "permission": 5,
+      "description": "Set the text color."
+    },
+    {
+      "name": "lsbgcolor",
+      "usage": "<#colorcode>",
+      "permission": 5,
+      "description": "Set the background color."
+    },
+    {
+      "name": "lscustom",
+      "usage": "<text>",
+      "permission": 5,
+      "description": "Set custom text shown at the end of style 2. Leave blank to clear."
+    },
+    {
+      "name": "lspath",
+      "usage": "<folder_path>",
+      "permission": 5,
+      "description": "Set the output folder. Leave blank to show it, \"clear\" to reset it."
+    },
+    {
+      "name": "lsupdate",
+      "permission": 5,
+      "description": "Write the scoreboard now."
+    },
+    {
+      "name": "resetls",
+      "permission": 5,
+      "description": "Reset all scoreboard settings to defaults."
+    }
+  ],
+  "cvars": [
+    {
+      "cvar": "qlx_scorerefresh",
+      "label": "Refresh interval (seconds)",
+      "type": "number",
+      "default": 30,
+      "min": 1,
+      "description": "How often the scoreboard file is rewritten."
+    },
+    {
+      "cvar": "qlx_lstitle",
+      "label": "Title",
+      "type": "string",
+      "default": "Live Scoreboard",
+      "description": "Scoreboard title."
+    },
+    {
+      "cvar": "qlx_livescorestyle",
+      "label": "Style",
+      "type": "number",
+      "default": 1,
+      "min": 1,
+      "max": 2,
+      "description": "1 = default layout, 2 = one line."
+    },
+    {
+      "cvar": "qlx_lsredname",
+      "label": "Red team name",
+      "type": "string",
+      "default": "Red Team",
+      "description": "Name shown for the Red team."
+    },
+    {
+      "cvar": "qlx_lsbluename",
+      "label": "Blue team name",
+      "type": "string",
+      "default": "Blue Team",
+      "description": "Name shown for the Blue team."
+    },
+    {
+      "cvar": "qlx_livescorecolor",
+      "label": "Text color",
+      "type": "string",
+      "default": "#ffffff",
+      "description": "Hex text color, e.g. #ffffff."
+    },
+    {
+      "cvar": "qlx_livescorebgcolor",
+      "label": "Background color",
+      "type": "string",
+      "default": "#000000",
+      "description": "Hex background color, e.g. #000000."
+    },
+    {
+      "cvar": "qlx_lscustom",
+      "label": "Custom text",
+      "type": "string",
+      "default": "",
+      "description": "Extra text shown at the end of style 2."
+    },
+    {
+      "cvar": "qlx_lspath",
+      "label": "Output folder",
+      "type": "string",
+      "default": "",
+      "description": "Folder the HTML file is written to, e.g. /var/www/html/server2. Empty uses a livescores folder next to the plugins."
+    }
+  ]
+}

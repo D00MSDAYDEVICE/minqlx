@@ -1,0 +1,45 @@
+{
+  "label": "Aliases Plus",
+  "description": "Modified aliases.py to list player aliases without lagging the server. Results are limited or sent in chunks.",
+  "commands": [
+    {
+      "name": "alias",
+      "usage": "<id>",
+      "description": "List the names and Steam IDs a player has used."
+    },
+    {
+      "name": "clearaliases",
+      "permission": 5,
+      "description": "Clear stored aliases."
+    },
+    {
+      "name": "tomtec_versions",
+      "description": "Show the plugin version."
+    }
+  ],
+  "cvars": [
+    {
+      "cvar": "qlx_aliasesmode",
+      "label": "Output mode",
+      "type": "string",
+      "default": "limit",
+      "description": "\"limit\" shows only the first results, \"chunk\" sends every result in delayed batches."
+    },
+    {
+      "cvar": "qlx_limitresults",
+      "label": "Result limit",
+      "type": "number",
+      "default": 10,
+      "min": 1,
+      "description": "Limit mode: maximum number of names/IDs shown."
+    },
+    {
+      "cvar": "qlx_chunktime",
+      "label": "Chunk delay (ms)",
+      "type": "number",
+      "default": 500,
+      "min": 0,
+      "description": "Chunk mode: delay in milliseconds between batches."
+    }
+  ]
+}

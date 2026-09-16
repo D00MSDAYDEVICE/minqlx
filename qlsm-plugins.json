@@ -1,32 +1,81 @@
 {
   "plugins": [
     {
+      "filename": "afkplus.py",
+      "label": "AFK Plus",
+      "description": "Detects players who stop moving during a round, warns them, then moves them to spectator. Admins can skip the punishment and spectate AFK players straight away.",
+      "runtime": "minqlx",
+      "requires_qlsm_version": "1.35.0"
+    },
+    {
+      "filename": "afkp.py",
+      "label": "AFK Plus (legacy)",
+      "description": "Older v1.1 of AFK Plus, which reads its settings only once when loaded. Use afkplus.py instead. Don't enable both.",
+      "runtime": "minqlx",
+      "requires_qlsm_version": "1.35.0"
+    },
+    {
       "filename": "aliasesplus.py",
       "label": "Aliases Plus",
-      "description": "Modified aliases.py to list player aliases without lagging the server.",
+      "description": "Modified aliases.py to list player aliases without lagging the server. Results are limited or sent in chunks.",
       "runtime": "minqlx",
-      "requires_qlsm_version": "1.30.0"
+      "requires_qlsm_version": "1.35.0"
     },
     {
       "filename": "autokick.py",
       "label": "Auto Kick",
-      "description": "This plugin will automatically kick users (after 1 warning) for using words added to the word list.",
+      "description": "Automatically kicks players (after a warning) for using words from the word list. Regex patterns can also go in autokick_patterns.txt, and incidents are logged to autokick.log.",
       "runtime": "minqlx",
-      "requires_qlsm_version": "1.30.0"
+      "requires_qlsm_version": "1.35.0"
+    },
+    {
+      "filename": "backfire.py",
+      "label": "Backfire",
+      "description": "Reflects team damage back onto the attacker (non-lethally, with a sound cue) and logs every incident. Needs g_friendlyfire 1 and a minqlx build with the damage hook (Shino's fork: github.com/mgaertne/minqlx).",
+      "runtime": "minqlx",
+      "requires_qlsm_version": "1.35.0"
+    },
+    {
+      "filename": "factoryvote.py",
+      "label": "Factory Vote",
+      "description": "Lets players vote for a factory listed in baseq3/factories.txt. A matching <factory>.cfg in the plugins folder is run when the vote passes, and restore.cfg can reset the settings afterwards.",
+      "runtime": "minqlx",
+      "requires_qlsm_version": "1.35.0"
     },
     {
       "filename": "lastmaps.py",
       "label": "Last Maps",
-      "description": "Shows a list of the last 5 played maps. Useful to avoid voting overplayed maps.",
+      "description": "Shows the last 5 played maps. Useful to avoid voting overplayed maps.",
       "runtime": "minqlx",
-      "requires_qlsm_version": "1.30.0"
+      "requires_qlsm_version": "1.35.0"
     },
-     {
+    {
+      "filename": "livescoreboard.py",
+      "label": "Live Scoreboard",
+      "description": "Writes the live score to an HTML file, for example to show it in OBS.",
+      "runtime": "minqlx",
+      "requires_qlsm_version": "1.35.0"
+    },
+    {
       "filename": "mapmanager.py",
       "label": "Map Manager",
-      "description": "Manages map rotation, enforces vote cooldowns on recently played maps, and tracks off-pool callvotes too. Also replaces/includes features of lastmaps.py",
+      "description": "Manages map rotation from mappool.txt, enforces vote cooldowns on recently played maps, and tracks off-pool callvotes too. Includes the features of lastmaps.py, so don't enable both.",
       "runtime": "minqlx",
-      "requires_qlsm_version": "1.30.0"
+      "requires_qlsm_version": "1.35.0"
+    },
+    {
+      "filename": "motd.py",
+      "label": "MOTD (multi-line)",
+      "description": "Replaces the stock motd.py with a message of the day of up to 10 lines. Lines set in the config are used only while no MOTD is stored; use !clearmotd and restart to reload them.",
+      "runtime": "minqlx",
+      "requires_qlsm_version": "1.35.0"
+    },
+    {
+      "filename": "namesplus.py",
+      "label": "Names Plus",
+      "description": "Replaces names.py. Lets admins set player names (by player or Steam ID), which persist across reconnects until cleared. Unloads names.py if it's loaded, so remove \"names\" (and DEFAULT) from qlx_plugins.",
+      "runtime": "minqlx",
+      "requires_qlsm_version": "1.35.0"
     }
   ]
 }

@@ -1,0 +1,42 @@
+{
+  "label": "Backfire",
+  "description": "Reflects team damage back onto the attacker (non-lethally, with a sound cue) and logs every incident. Needs g_friendlyfire 1 and a minqlx build with the damage hook (Shino's fork: github.com/mgaertne/minqlx).",
+  "commands": [
+    {
+      "name": "bfv",
+      "description": "Show the plugin version."
+    }
+  ],
+  "cvars": [
+    {
+      "cvar": "qlx_backfireSlapAmount",
+      "label": "Fixed slap damage",
+      "type": "number",
+      "default": 10,
+      "min": 0,
+      "description": "Damage dealt back per team hit when proportional mode is off."
+    },
+    {
+      "cvar": "qlx_backfireProportional",
+      "label": "Proportional damage",
+      "type": "bool",
+      "default": false,
+      "description": "Deal back the same damage the attacker did, instead of the fixed amount."
+    },
+    {
+      "cvar": "qlx_backfireMinHealth",
+      "label": "Minimum health",
+      "type": "number",
+      "default": 1,
+      "min": 0,
+      "description": "Stop punishing below this health. 1 means the attacker never dies from backfire."
+    },
+    {
+      "cvar": "qlx_logDir",
+      "label": "Log directory",
+      "type": "string",
+      "default": "logs",
+      "description": "Folder for backfire.log, relative to the server folder unless absolute."
+    }
+  ]
+}
