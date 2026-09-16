@@ -631,7 +631,7 @@
           "type": "string",
           "default": "",
           "description": "MOTD line 10."
-        }
+                }
       ]
     },
     {
@@ -687,6 +687,41 @@
           "type": "bool",
           "default": false,
           "description": "Only allow names matching the player's Steam name."
+        }
+      ]
+    },
+    {
+      "filename": "votebanplus.py",
+      "label": "Voteban Plus",
+      "description": "Plugin for basic callvote management",
+      "runtime": "minqlx",
+      "requires_qlsm_version": "1.36.0",
+      "commands": [
+        {
+          "name": "voteban",
+          "usage": "<player id or steam id>",
+          "permission": 4,
+          "description": "Ban a player from calling a vote."
+        },
+        {
+          "name": "voteunban",
+          "usage": "<player id or steam id>",
+          "permission": 4,
+          "description": "Unban a player from calling a vote."
+        },
+        {
+          "name": "votebanlist",
+          "permission": 4,
+          "description": "List players banned from calling votes."
+        }
+      ],
+      "cvars": [
+        {
+          "cvar": "qlx_votebanplusAdmin",
+          "label": "Admin level for command usage",
+          "type": "number",
+          "default": 4,
+          "description": "Minimum admin level required to use Voteban Plus commands."
         }
       ]
     }
