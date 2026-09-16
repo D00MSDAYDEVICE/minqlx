@@ -17,7 +17,7 @@
     {
       "filename": "lastmaps.py",
       "label": "Last Maps",
-      "description": "Shows a lists of the last 5 played maps. Useful to avoid voting overplayed maps.",
+      "description": "Shows a list of the last 5 played maps. Useful to avoid voting overplayed maps.",
       "runtime": "minqlx",
       "requires_qlsm_version": "1.30.0"
     },
