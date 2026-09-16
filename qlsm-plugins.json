@@ -27,6 +27,6 @@
       "description": "Manages map rotation, enforces vote cooldowns on recently played maps, and tracks off-pool callvotes too. Also replaces/includes features of lastmaps.py",
       "runtime": "minqlx",
       "requires_qlsm_version": "1.30.0"
-    },
+    }
   ]
 }
