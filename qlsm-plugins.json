@@ -1,0 +1,11 @@
+{
+  "plugins": [
+    {
+      "filename": "hello_qlsm.py",
+      "label": "Doomsday's Plugins",
+      "description": "Collection of plugins for Quake Live",
+      "runtime": "minqlx",
+      "requires_qlsm_version": "1.30.0"
+    }
+  ]
+}
