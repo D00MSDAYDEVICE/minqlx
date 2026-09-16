@@ -11,6 +11,7 @@ Collection of plugins for Quake Live - Add to your server's minqlx-plugins folde
 [mapmanager](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#mapmanagerpy)<br>
 [motd (replacement)](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#motdpy-replacement)<br>
 [namesplus](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#namespluspy-replaces-namespy)<br>
+[votebanplus](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#namespluspy-replaces-namespy)<br>
 <br>
 **QLSM:** this repository can be added in [QLSM](https://github.com/dngrtech/qlsm) under **Settings → Plugin Repositories** using `https://github.com/D00MSDAYDEVICE/minqlx`.
 `qlsm-plugins.json` gives QLSM each plugin's description, commands and an editable settings form (QLSM 1.36.0 or newer). See [Plugin Repositories](https://dngrtech.github.io/qlsm/operations/plugin-repositories/).<br>
@@ -188,3 +189,17 @@ Additional settings:<br>
 **!clear** `<player ID #>` - Removes Admin set name<br>
 **!listnames** - Shows a list of Admin-set names<br>
 **!npv** - Show version number<br>
+
+## votebanplus.py [right-click & save](https://raw.githubusercontent.com/D00MSDAYDEVICE/minqlx/refs/heads/main/votebanplus.py)<br>
+Plugin for basic callvote management<br>
+<br>
+> [!NOTE]
+> + This will also block any kind of vote including those in plugins like "extra votes" (weaponrespawn, instagib, etc..)<br>
+
+Additional settings:<br>
+`qlx_votebanplusAdmin` - admin level for command usage<br>
+
+**Commands:**<br>
+**!voteban** ``<player ID #>` OR `<steam ID #>` - Bans player from call voting<br>
+**!voteunban** `<player ID #>` OR `<steam ID #>` - Unbans player from call voting<br>
+**!votebanlist** - Lists current vote bans<br>
