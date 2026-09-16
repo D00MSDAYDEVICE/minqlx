@@ -1,0 +1,124 @@
+{
+  "label": "MOTD (multi-line)",
+  "description": "Replaces the stock motd.py with a message of the day of up to 10 lines. Lines set in the config are used only while no MOTD is stored; use !clearmotd and restart to reload them.",
+  "commands": [
+    {
+      "name": "setmotd",
+      "usage": "<line> <message>",
+      "permission": 4,
+      "description": "Set a specific MOTD line (1-10)."
+    },
+    {
+      "name": "newmotd",
+      "usage": "<line> <message>",
+      "permission": 4,
+      "description": "Set a specific MOTD line (1-10)."
+    },
+    {
+      "name": "addmotd",
+      "usage": "<message>",
+      "permission": 4,
+      "description": "Add a line in the next free slot."
+    },
+    {
+      "name": "clearmotd",
+      "permission": 4,
+      "description": "Clear all MOTD lines."
+    },
+    {
+      "name": "reloadmotd",
+      "permission": 4,
+      "description": "Reload MOTD lines from motd.cfg in baseq3."
+    },
+    {
+      "name": "motd",
+      "description": "Show the MOTD."
+    }
+  ],
+  "cvars": [
+    {
+      "cvar": "qlx_motdHeader",
+      "label": "Header",
+      "type": "string",
+      "default": "^6======= ^7Message of the Day ^6=======^7",
+      "description": "Header shown above the MOTD. Use \\n for a line break."
+    },
+    {
+      "cvar": "qlx_motdSound",
+      "label": "Sound",
+      "type": "string",
+      "default": "sound/vo/crash_new/37b_07_alt.wav",
+      "description": "Sound played when the MOTD is shown. Empty for no sound."
+    },
+    {
+      "cvar": "qlx_motd1",
+      "label": "Line 1",
+      "type": "string",
+      "default": "",
+      "description": "MOTD line 1."
+    },
+    {
+      "cvar": "qlx_motd2",
+      "label": "Line 2",
+      "type": "string",
+      "default": "",
+      "description": "MOTD line 2."
+    },
+    {
+      "cvar": "qlx_motd3",
+      "label": "Line 3",
+      "type": "string",
+      "default": "",
+      "description": "MOTD line 3."
+    },
+    {
+      "cvar": "qlx_motd4",
+      "label": "Line 4",
+      "type": "string",
+      "default": "",
+      "description": "MOTD line 4."
+    },
+    {
+      "cvar": "qlx_motd5",
+      "label": "Line 5",
+      "type": "string",
+      "default": "",
+      "description": "MOTD line 5."
+    },
+    {
+      "cvar": "qlx_motd6",
+      "label": "Line 6",
+      "type": "string",
+      "default": "",
+      "description": "MOTD line 6."
+    },
+    {
+      "cvar": "qlx_motd7",
+      "label": "Line 7",
+      "type": "string",
+      "default": "",
+      "description": "MOTD line 7."
+    },
+    {
+      "cvar": "qlx_motd8",
+      "label": "Line 8",
+      "type": "string",
+      "default": "",
+      "description": "MOTD line 8."
+    },
+    {
+      "cvar": "qlx_motd9",
+      "label": "Line 9",
+      "type": "string",
+      "default": "",
+      "description": "MOTD line 9."
+    },
+    {
+      "cvar": "qlx_motd10",
+      "label": "Line 10",
+      "type": "string",
+      "default": "",
+      "description": "MOTD line 10."
+    }
+  ]
+}

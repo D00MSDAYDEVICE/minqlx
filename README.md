@@ -12,6 +12,9 @@ Collection of plugins for Quake Live - Add to your server's minqlx-plugins folde
 [motd (replacement)](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#motdpy-replacement)<br>
 [namesplus](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#namespluspy-replaces-namespy)<br>
 <br>
+**QLSM:** this repository can be added in [QLSM](https://github.com/dngrtech/qlsm) under **Settings → Plugin Repositories** using `https://github.com/D00MSDAYDEVICE/minqlx`.
+Each plugin's `<plugin>.ql-plugin.json` gives QLSM its description, commands and an editable settings form. See [Plugin Repositories](https://dngrtech.github.io/qlsm/operations/plugin-repositories/).<br>
+<br>
 ## afkplus.py [right-click & save](https://raw.githubusercontent.com/D00MSDAYDEVICE/minqlx/refs/heads/main/afkplus.py) <br>
 This plugin expands on iouonegirl's AFK plugin found here:<br>
 https://github.com/dsverdlo/minqlx-plugins.<br>
