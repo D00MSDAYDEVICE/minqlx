@@ -55,6 +55,20 @@ silent - suppress message with no notification at all<br>
 **Optional:**<br> Regex patterns can also be added to autokick_patterns.txt<br>
 An autokick.log file is also kept, and moderation events also go to chat.log unless `qlx_autokickChatlog` is 0.
 
+## backfill.py [right-click & save](https://raw.githubusercontent.com/D00MSDAYDEVICE/minqlx/refs/heads/main/backfill.py) <br>
+This is A fork of bots.py by BarelyMiSSeD<br>
+<br>
+● Better specqueue dependency management<br>
+● Bot mute capability without quiet.py<br>
+● Other minor bugfixes<br>
+<br>
+Added cvar:<br>
+
+`qlx_backfillMuteBots 1` - Mue bots<br>
+**Added Commands:**<br>
+**!setskill** - 0-5, default 3.5<br>
+**!mutebots** - ON|OFF<br>
+
 ## backfire.py [right-click & save](https://raw.githubusercontent.com/D00MSDAYDEVICE/minqlx/refs/heads/main/backfire.py) <br>
 This is an extension plugin for minqlx to slap/punish players that do team damage<br>
 This works similar to a reverse vampiric effect.<br>
@@ -77,20 +91,6 @@ Minimum amout of health before punishing further (1 prevents death)<br>
 
 `qlx_logDir`
 Optional log directory, default is serverfolder/logs/backfire.log<br>
-
-## backfill.py [right-click & save](https://raw.githubusercontent.com/D00MSDAYDEVICE/minqlx/refs/heads/main/backfill.py) <br>
-This is A fork of bots.py by BarelyMiSSeD<br>
-● Better specqueue dependency management<br>
-● Bot mute capability without quiet.py<br>
-● Other minor bugfixes<br>
-<br>
-
-Added cvar:<br>
-
-`qlx_backfillMuteBots 1` - Mue bots<br>
-**Commands:**<br>
-**!setskill** - 0-5, default 3.5<br>
-**!mutebots** - ON|OFF<br>
 
 ## factoryvote.py [right-click & save](https://raw.githubusercontent.com/D00MSDAYDEVICE/minqlx/refs/heads/main/factoryvote.py) <br>
 
