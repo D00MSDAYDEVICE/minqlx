@@ -30,7 +30,7 @@ VAR_ENABLE_PUN = "qlx_afk_enable_punishment"
 CHECK_INTERVAL = 0.33
 
 
-class afkp(minqlx.Plugin):
+class afkplus(minqlx.Plugin):
     def __init__(self):
         super(afkp, self).__init__()
 
