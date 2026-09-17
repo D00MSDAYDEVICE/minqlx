@@ -5,12 +5,12 @@ Collection of plugins for Quake Live - Add to your server's minqlx-plugins folde
 [aliasesplus](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#aliasespluspy)<br>
 [autokick](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#autokickpy)<br>
 [backfire](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#backfirepy-right-click--save-)<br>
-[factoryvote](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#factoryvotepy)<br>
+[factoryvote](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#lastmapspy-right-click--save-)<br>
 [lastmaps](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#lastmapspy)<br>
-[livescoreboard](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#livescoreboardpy)<br>
-[mapmanager](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#mapmanagerpy)<br>
-[motd (replacement)](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#motdpy-replacement)<br>
-[namesplus](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#namespluspy-replaces-namespy)<br>
+[livescoreboard](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#livescoreboardpy-right-click--save)<br>
+[mapmanager](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#mapmanagerpy-right-click--save)<br>
+[motd (replacement)](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#motdpy-replacement-right-click--save)<br>
+[namesplus](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#namespluspy-replaces-namespy-right-click--save)<br>
 [votebanplus](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#votebanpluspy-right-click--save)<br>
 <br>
 **QLSM:** this repository can be added in [QLSM](https://github.com/dngrtech/qlsm) under **Settings → Plugin Repositories** using `https://github.com/D00MSDAYDEVICE/minqlx`.
