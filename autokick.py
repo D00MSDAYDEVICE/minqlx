@@ -10,6 +10,8 @@
 #   kick   - warn in chat, then kick on offence N
 #   warn   - always privately warn the player, never kick
 #   silent - suppress with no feedback at all, then kick on offence N
+# qlx_autokickChatlog "1" - also write moderation events to chatlogs/chat.log
+#                           (1 = on, 0 = autokick.log only)
 
 # COMMANDS:
 # !addword <word or phrase>
@@ -41,7 +43,7 @@ LIST_PATTERNS_LIMIT = 20
 
 class autokick(minqlx.Plugin):
     def __init__(self):
-        self.version = "1.4"
+        self.version = "1.5"
         self.add_command("akv", self.cmd_version, 0)
 
         # Hooks
@@ -60,6 +62,7 @@ class autokick(minqlx.Plugin):
         # Configurable CVARs
         self.set_cvar_once("qlx_autokickWarnings", "1")
         self.set_cvar_once("qlx_autokickMode", "kick")
+        self.set_cvar_once("qlx_autokickChatlog", "1")
         # qlx_autokickMode options:
         #   kick   - warn, then kick on offence N (N = qlx_autokickWarnings)
         #   warn   - suppress message and notify the player, never kick
@@ -101,6 +104,31 @@ class autokick(minqlx.Plugin):
         except OSError as e:
             minqlx.get_logger(self).warning("autokick: log write failed: %s", e)
 
+    def chatlog(self, message):
+        # Blocked messages never reach the log plugin (the chat hook stops them),
+        # so record moderation events in chat.log as well.
+        if not self.chatlog_enabled:
+            return
+        try:
+            # Looked up on every call: the log plugin may load after this one.
+            log_plugin = self.plugins.get("log")
+            if log_plugin is not None and hasattr(log_plugin, "chatlog"):
+                # Same logger and handler as the log plugin, so rotation stays correct.
+                log_plugin.chatlog.info(self.clean_text(message))
+                return
+            file_dir = os.path.join(self.get_cvar("fs_homepath"), "chatlogs")
+            os.makedirs(file_dir, exist_ok=True)
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            with open(os.path.join(file_dir, "chat.log"), "a", encoding="utf-8") as f:
+                f.write(f"[{timestamp}] {self.clean_text(message)}\n")
+        except Exception as e:
+            minqlx.get_logger(self).warning("autokick: chat.log write failed: %s", e)
+
+    def event(self, message):
+        # Moderation outcomes: always in autokick.log, and in chat.log if enabled.
+        self.log(message)
+        self.chatlog(f"[AUTOKICK] {message}")
+
     def cmd_version(self, player, msg, channel):
         player.tell("^3AutoKick Plugin Version:^7 {}".format(self.version))
 
@@ -113,6 +141,10 @@ class autokick(minqlx.Plugin):
         if self.mode not in ("kick", "warn", "silent"):
             self.log(f"[WARN] Unknown mode '{self.mode}', defaulting to 'kick'")
             self.mode = "kick"
+        try:
+            self.chatlog_enabled = int(self.get_cvar("qlx_autokickChatlog")) != 0
+        except (TypeError, ValueError):
+            self.chatlog_enabled = True
 
     # ------------------------------------------------------------
     # Pattern Loading
@@ -161,7 +193,7 @@ class autokick(minqlx.Plugin):
         if self.is_admin(player):
             return
 
-        self.log(f"[MATCH] {player.name} ({player.steam_id}) matched '{trigger}': {msg}")
+        self.event(f"[MATCH] {player.name} ({player.steam_id}) matched '{trigger}': {msg}")
         self.process_violation(player, trigger)
         return minqlx.RET_STOP_ALL  # Always suppress the message
 
@@ -200,18 +232,18 @@ class autokick(minqlx.Plugin):
             self.warnings[sid] = count
 
             if count < self.max_warnings:
-                self.log(f"[SILENT] {player.name}'s message suppressed for '{trigger}' "
-                          f"({count}/{self.max_warnings})")
+                self.event(f"[SILENT] {player.name}'s message suppressed for '{trigger}' "
+                            f"({count}/{self.max_warnings})")
             else:
                 self.kick_player(player, trigger)
-                self.log(f"[SILENT-KICK] {player.name} kicked after {count} warnings for '{trigger}'")
+                self.event(f"[SILENT-KICK] {player.name} kicked after {count} warnings for '{trigger}'")
                 del self.warnings[sid]
             return
 
         if self.mode == "warn":
             # Suppress and privately notify the player only, never kick
             player.tell("^1Your message was blocked^7: inappropriate language is not allowed.")
-            self.log(f"[SUPPRESS] {player.name}'s message suppressed for '{trigger}'")
+            self.event(f"[SUPPRESS] {player.name}'s message suppressed for '{trigger}'")
             return
 
         # Default: kick mode — warn N times then kick
@@ -220,11 +252,11 @@ class autokick(minqlx.Plugin):
 
         if count < self.max_warnings:
             self.msg(f"^3Warning to {player.name}: ^7Inappropriate language detected.")
-            self.log(f"[WARN] {player.name} warned ({count}/{self.max_warnings}) for '{trigger}'")
+            self.event(f"[WARN] {player.name} warned ({count}/{self.max_warnings}) for '{trigger}'")
         else:
             self.msg(f"^1Player ^7{player.name} ^1was kicked for inappropriate language.")
             self.kick_player(player, trigger)
-            self.log(f"[KICK] {player.name} kicked after {count} warnings for '{trigger}'")
+            self.event(f"[KICK] {player.name} kicked after {count} warnings for '{trigger}'")
             del self.warnings[sid]
 
     def kick_player(self, player, trigger):
@@ -248,7 +280,7 @@ class autokick(minqlx.Plugin):
         self.db.sadd(self.words_key, word)
         self.banned_words.add(word)
         channel.reply(f"^2Added banned word:^7 {word}")
-        self.log(f"[CMD] {player.name} added word '{word}'")
+        self.event(f"[CMD] {player.name} added word '{word}'")
 
     def cmd_delword(self, player, msg, channel):
         if len(msg) < 2:
@@ -259,7 +291,7 @@ class autokick(minqlx.Plugin):
         self.db.srem(self.words_key, word)
         self.banned_words.remove(word)
         channel.reply(f"^1Removed banned word:^7 {word}")
-        self.log(f"[CMD] {player.name} removed word '{word}'")
+        self.event(f"[CMD] {player.name} removed word '{word}'")
 
     def cmd_listwords(self, player, msg, channel):
         # Sent privately so the list is never shown to the whole server.
@@ -284,4 +316,4 @@ class autokick(minqlx.Plugin):
             f"^2Reloaded {len(self.regex_patterns)} regex patterns. "
             f"Mode: {self.mode} | Max warnings: {self.max_warnings}"
         )
-        self.log(f"[CMD] {player.name} reloaded regex patterns.")
+        self.event(f"[CMD] {player.name} reloaded regex patterns.")
