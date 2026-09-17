@@ -48,10 +48,11 @@ This plugin will automatically kick users (after 1 warning) for using words adde
 `qlx_autokickMode` - Settings:<br>
 kick   - warn, then kick on offence N (original behavior)<br>
 warn   - suppress message and notify the player, never kick<br>
-silent - suppress message with no notification at all
+silent - suppress message with no notification at all<br>
+`qlx_autokickChatlog` - 1 (default) also writes blocked messages, warnings, kicks and word list changes to chatlogs/chat.log; 0 keeps them in autokick.log only<br>
 
 **Optional:**<br> Regex patterns can also be added to autokick_patterns.txt<br>
-An autokick.log file is also kept.
+An autokick.log file is also kept, and moderation events also go to chat.log unless `qlx_autokickChatlog` is 0.
 
 ## backfire.py [right-click & save](https://raw.githubusercontent.com/D00MSDAYDEVICE/minqlx/refs/heads/main/backfire.py) <br>
 This is an extension plugin for minqlx to slap/punish players that do team damage<br>

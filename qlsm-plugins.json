@@ -129,7 +129,7 @@
     {
       "filename": "autokick.py",
       "label": "Auto Kick",
-      "description": "Automatically kicks players (after a warning) for using words or phrases from the word list. Colour codes are ignored when matching. Regex patterns can also go in autokick_patterns.txt, and incidents are logged to autokick.log.",
+      "description": "Automatically kicks players (after a warning) for using words or phrases from the word list. Colour codes are ignored when matching. Regex patterns can also go in autokick_patterns.txt, and incidents are logged to autokick.log and, by default, to the server chat log (chatlogs/chat.log).",
       "runtime": "minqlx",
       "requires_qlsm_version": "1.36.0",
       "commands": [
@@ -175,6 +175,13 @@
           "type": "string",
           "default": "kick",
           "description": "\"kick\": warn then kick. \"warn\": block the message and notify the player, never kick. \"silent\": block the message without notifying anyone."
+        },
+        {
+          "cvar": "qlx_autokickChatlog",
+          "label": "Log to chat.log",
+          "type": "bool",
+          "default": true,
+          "description": "Also write blocked messages, warnings, kicks and word list changes to chatlogs/chat.log, so they show up in the server chat log. autokick.log is always kept."
         }
       ]
     },
