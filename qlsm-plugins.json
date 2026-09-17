@@ -353,7 +353,7 @@
           "name": "lscustom",
           "usage": "<text>",
           "permission": 5,
-          "description": "Set custom text shown at the end of style 2. Leave blank to clear."
+          "description": "Set custom text shown at the end of style 2."
         },
         {
           "name": "lspath",
@@ -638,7 +638,7 @@
           "type": "string",
           "default": "",
           "description": "MOTD line 10."
-                }
+        }
       ]
     },
     {
@@ -729,6 +729,36 @@
           "type": "number",
           "default": 4,
           "description": "Minimum admin level required to use Voteban Plus commands."
+        }
+      ]
+    },
+    {
+      "filename": "backfill.py",
+      "label": "Backfill",
+      "description": "A fork of bots.py by BarelyMiSSeD with better specqueue dependency management, Bot mute capability without quiet.py and other minor bugfixes.",
+      "runtime": "minqlx",
+      "requires_qlsm_version": "1.36.0",
+      "cvars": [
+        {
+          "cvar": "qlx_backfillMuteBots",
+          "label": "qlx_backfillMuteBots",
+          "type": "number",
+          "default": 1,
+          "description": "Mute bots"
+        }
+      ],
+      "commands": [
+        {
+          "name": "setskill ",
+          "description": "Set skill level of bots\n0 = Use default for each",
+          "permission": 3,
+          "usage": "0-5"
+        },
+        {
+          "name": "mutebots",
+          "description": "Mute bots",
+          "permission": 3,
+          "usage": "ON | OFF"
         }
       ]
     }
