@@ -186,6 +186,36 @@
       ]
     },
     {
+      "filename": "backfill.py",
+      "label": "Backfill",
+      "description": "A fork of bots.py by BarelyMiSSeD with better specqueue dependency management, Bot mute capability without quiet.py and other minor bugfixes.",
+      "runtime": "minqlx",
+      "requires_qlsm_version": "1.36.0",
+      "cvars": [
+        {
+          "cvar": "qlx_backfillMuteBots",
+          "label": "qlx_backfillMuteBots",
+          "type": "number",
+          "default": 1,
+          "description": "Mute bots"
+        }
+      ],
+      "commands": [
+        {
+          "name": "setskill ",
+          "description": "Set skill level of bots\n0 = Use default for each",
+          "permission": 3,
+          "usage": "0-5"
+        },
+        {
+          "name": "mutebots",
+          "description": "Mute bots",
+          "permission": 3,
+          "usage": "ON | OFF"
+        }
+      ]
+    },
+    {
       "filename": "backfire.py",
       "label": "Backfire",
       "description": "Reflects team damage back onto the attacker (non-lethally, with a sound cue) and logs every incident. Needs g_friendlyfire 1 and a minqlx build with the damage hook (Shino's fork: github.com/mgaertne/minqlx).",
@@ -729,36 +759,6 @@
           "type": "number",
           "default": 4,
           "description": "Minimum admin level required to use Voteban Plus commands."
-        }
-      ]
-    },
-    {
-      "filename": "backfill.py",
-      "label": "Backfill",
-      "description": "A fork of bots.py by BarelyMiSSeD with better specqueue dependency management, Bot mute capability without quiet.py and other minor bugfixes.",
-      "runtime": "minqlx",
-      "requires_qlsm_version": "1.36.0",
-      "cvars": [
-        {
-          "cvar": "qlx_backfillMuteBots",
-          "label": "qlx_backfillMuteBots",
-          "type": "number",
-          "default": 1,
-          "description": "Mute bots"
-        }
-      ],
-      "commands": [
-        {
-          "name": "setskill ",
-          "description": "Set skill level of bots\n0 = Use default for each",
-          "permission": 3,
-          "usage": "0-5"
-        },
-        {
-          "name": "mutebots",
-          "description": "Mute bots",
-          "permission": 3,
-          "usage": "ON | OFF"
         }
       ]
     }
