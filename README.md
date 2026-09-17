@@ -4,6 +4,7 @@ Collection of plugins for Quake Live - Add to your server's minqlx-plugins folde
 [afkplus](https://github.com/D00MSDAYDEVICE/minqlx#afkpluspy-right-click--save-)<br>
 [aliasesplus](https://github.com/D00MSDAYDEVICE/minqlx#aliasespluspy-right-click--save-)<br>
 [autokick](https://github.com/D00MSDAYDEVICE/minqlx/#autokickpy-right-click--save-)<br>
+[backfill](https://github.com/D00MSDAYDEVICE/minqlx/#backfirepy-right-click--save-)<br>
 [backfire](https://github.com/D00MSDAYDEVICE/minqlx/#backfirepy-right-click--save-)<br>
 [factoryvote](https://github.com/D00MSDAYDEVICE/minqlx#lastmapspy-right-click--save-)<br>
 [lastmaps](https://github.com/D00MSDAYDEVICE/minqlx/#lastmapspy-right-click--save-)<br>
@@ -76,6 +77,20 @@ Minimum amout of health before punishing further (1 prevents death)<br>
 
 `qlx_logDir`
 Optional log directory, default is serverfolder/logs/backfire.log<br>
+
+## backfill.py [right-click & save](https://raw.githubusercontent.com/D00MSDAYDEVICE/minqlx/refs/heads/main/backfill.py) <br>
+This is A fork of bots.py by BarelyMiSSeD<br>
+● Better specqueue dependency management<br>
+● Bot mute capability without quiet.py<br>
+● Other minor bugfixes<br>
+<br>
+
+Added cvar:<br>
+
+`qlx_backfillMuteBots 1` - Mue bots<br>
+**Commands:**<br>
+**!setskill** - 0-5, default 3.5<br>
+**!mutebots** - ON|OFF<br>
 
 ## factoryvote.py [right-click & save](https://raw.githubusercontent.com/D00MSDAYDEVICE/minqlx/refs/heads/main/factoryvote.py) <br>
 
