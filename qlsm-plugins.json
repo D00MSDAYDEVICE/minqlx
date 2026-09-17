@@ -129,26 +129,26 @@
     {
       "filename": "autokick.py",
       "label": "Auto Kick",
-      "description": "Automatically kicks players (after a warning) for using words from the word list. Regex patterns can also go in autokick_patterns.txt, and incidents are logged to autokick.log.",
+      "description": "Automatically kicks players (after a warning) for using words or phrases from the word list. Colour codes are ignored when matching. Regex patterns can also go in autokick_patterns.txt, and incidents are logged to autokick.log.",
       "runtime": "minqlx",
       "requires_qlsm_version": "1.36.0",
       "commands": [
         {
           "name": "addword",
-          "usage": "<word>",
+          "usage": "<word or phrase>",
           "permission": 5,
-          "description": "Add a word to the list."
+          "description": "Add a word or phrase to the list."
         },
         {
           "name": "delword",
-          "usage": "<word>",
+          "usage": "<word or phrase>",
           "permission": 5,
-          "description": "Remove a word from the list."
+          "description": "Remove a word or phrase from the list."
         },
         {
           "name": "listwords",
           "permission": 5,
-          "description": "Show the word list."
+          "description": "Show the word list (sent privately)."
         },
         {
           "name": "reloadpatterns",
@@ -163,11 +163,11 @@
       "cvars": [
         {
           "cvar": "qlx_autokickWarnings",
-          "label": "Warnings before kick",
+          "label": "Kick on offence",
           "type": "number",
           "default": 1,
           "min": 0,
-          "description": "Number of warnings a player gets before being kicked."
+          "description": "The offence that gets a player kicked: 1 kicks on the first offence, 3 warns twice and kicks on the third."
         },
         {
           "cvar": "qlx_autokickMode",

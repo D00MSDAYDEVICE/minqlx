@@ -39,14 +39,14 @@ Results are displayed in chunks and/or limited (configurable)<br>
 This plugin will automatically kick users (after 1 warning) for using words added to the word list.<br>
 <br>
 **Commands:**<br>
-**!addword** - Adds a word the list<br>
-**!delword** - Removes/deletes word from the list<br>
-**!listwords**  - Displays the word list<br>
+**!addword** - Adds a word or phrase to the list<br>
+**!delword** - Removes/deletes a word or phrase from the list<br>
+**!listwords**  - Displays the word list (sent privately)<br>
 
 **CVARS:**<br>
-`qlx_autokickWarnings`  - number of warnings before kick <br>
+`qlx_autokickWarnings`  - the offence that triggers the kick (1 = first offence, 3 = warn twice, kick on third) <br>
 `qlx_autokickMode` - Settings:<br>
-kick   - warn N times then kick (original behavior)<br>
+kick   - warn, then kick on offence N (original behavior)<br>
 warn   - suppress message and notify the player, never kick<br>
 silent - suppress message with no notification at all
 

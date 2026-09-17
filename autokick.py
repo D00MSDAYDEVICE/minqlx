@@ -4,13 +4,14 @@
 
 # This is an extension plugin for minqlx to autokick players based on chat
 # CVARS:
-# qlx_autokickWarnings "1"
+# qlx_autokickWarnings "1" - offence that triggers the kick
+#                            (1 = kick on first offence, 3 = warn twice, kick on third)
 # qlx_autokickMode "kick" or "warn" or "silent"
 
 # COMMANDS:
-# !addword
-# !delword
-# !listwords
+# !addword <word or phrase>
+# !delword <word or phrase>
+# !listwords (sent privately)
 # !reloadpatterns (from your autokick_patterns.txt)
 
 # You can redistribute it and/or modify it under the terms of the
@@ -29,9 +30,15 @@ import os
 import re
 from datetime import datetime
 
+# Quake colour codes (^1, ^7, ...) are stripped before matching so they
+# can't be used to split a banned word.
+COLOR_CODE = re.compile(r"\^[0-9]")
+LIST_WORDS_LIMIT = 50
+LIST_PATTERNS_LIMIT = 20
+
 class autokick(minqlx.Plugin):
     def __init__(self):
-        self.version = "1.2"
+        self.version = "1.3"
         self.add_command("akv", self.cmd_version, 0)
 
         # Hooks
@@ -51,12 +58,11 @@ class autokick(minqlx.Plugin):
         self.set_cvar_once("qlx_autokickWarnings", "1")
         self.set_cvar_once("qlx_autokickMode", "kick")
         # qlx_autokickMode options:
-        #   kick   - warn N times then kick (original behavior)
+        #   kick   - warn, then kick on offence N (N = qlx_autokickWarnings)
         #   warn   - suppress message and notify the player, never kick
         #   silent - suppress message with no notification at all
 
-        self.max_warnings = int(self.get_cvar("qlx_autokickWarnings"))
-        self.mode = self.get_cvar("qlx_autokickMode").strip().lower()
+        self.reload_cvars()
 
         # Redis key for literal words
         self.words_key = "minqlx:autokickwords"
@@ -83,9 +89,13 @@ class autokick(minqlx.Plugin):
         return os.path.dirname(os.path.abspath(__file__))
 
     def log(self, message):
+        # A failed write must never stop chat filtering or plugin loading.
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        with open(self.log_path, "a", encoding="utf-8") as f:
-            f.write(f"[{timestamp}] {message}\n")
+        try:
+            with open(self.log_path, "a", encoding="utf-8") as f:
+                f.write(f"[{timestamp}] {message}\n")
+        except OSError as e:
+            minqlx.get_logger(self).warning("autokick: log write failed: %s", e)
 
     def cmd_version(self, player, msg, channel):
         player.tell("^3AutoKick Plugin Version:^7 {}".format(self.version))
@@ -93,9 +103,9 @@ class autokick(minqlx.Plugin):
     def reload_cvars(self):
         try:
             self.max_warnings = int(self.get_cvar("qlx_autokickWarnings"))
-        except Exception:
+        except (TypeError, ValueError):
             self.max_warnings = 1
-        self.mode = self.get_cvar("qlx_autokickMode").strip().lower()
+        self.mode = (self.get_cvar("qlx_autokickMode") or "").strip().lower()
         if self.mode not in ("kick", "warn", "silent"):
             self.log(f"[WARN] Unknown mode '{self.mode}', defaulting to 'kick'")
             self.mode = "kick"
@@ -139,31 +149,38 @@ class autokick(minqlx.Plugin):
         if not msg or player.steam_id == 0:
             return
 
-        lower_msg = msg.lower()
-        self.log(f"[CHAT] {player.name} ({player.steam_id}): {msg}")
+        # Match first, so clean chat costs no DB lookup and no disk write.
+        trigger = self.find_trigger(msg)
+        if trigger is None:
+            return
 
-        # Skip admins
-        try:
-            perm = self.db.get_permission(player.steam_id)
-            if perm >= 5:
-                self.log(f"[SKIP] {player.name} has admin permission {perm}.")
-                return
-        except Exception as e:
-            self.log(f"[WARN] Permission check failed for {player.name}: {e}")
+        if self.is_admin(player):
+            return
 
-        # Check literal banned words
+        self.log(f"[MATCH] {player.name} ({player.steam_id}) matched '{trigger}': {msg}")
+        self.process_violation(player, trigger)
+        return minqlx.RET_STOP_ALL  # Always suppress the message
+
+    def find_trigger(self, msg):
+        clean_msg = COLOR_CODE.sub("", msg)
+        lower_msg = clean_msg.lower()
+
         for word in self.banned_words:
             if word in lower_msg:
-                self.log(f"[MATCH-WORD] {player.name} matched '{word}'")
-                self.process_violation(player, word)
-                return minqlx.RET_STOP_ALL  # Always suppress the message
+                return word
 
-        # Check regex patterns
         for pattern in self.regex_patterns:
-            if pattern.search(msg):
-                self.log(f"[MATCH-REGEX] {player.name} matched regex '{pattern.pattern}'")
-                self.process_violation(player, pattern.pattern)
-                return minqlx.RET_STOP_ALL  # Always suppress the message
+            if pattern.search(clean_msg):
+                return pattern.pattern
+
+        return None
+
+    def is_admin(self, player):
+        try:
+            return self.db.get_permission(player.steam_id) >= 5
+        except Exception as e:
+            self.log(f"[WARN] Permission check failed for {player.name}: {e}")
+            return False
 
     # ------------------------------------------------------------
     # Violation Handling
@@ -198,7 +215,7 @@ class autokick(minqlx.Plugin):
 
     def kick_player(self, player, trigger):
         try:
-            minqlx.console_command(f"clientkick {player.id}")
+            player.kick("Inappropriate language")
         except Exception as e:
             self.log(f"[ERROR] Failed to kick {player.name}: {e}")
 
@@ -209,7 +226,7 @@ class autokick(minqlx.Plugin):
     def cmd_addword(self, player, msg, channel):
         if len(msg) < 2:
             return minqlx.RET_USAGE
-        word = msg[1].lower().strip()
+        word = " ".join(msg[1:]).lower().strip()
         if not word:
             return minqlx.RET_USAGE
         if word in self.banned_words:
@@ -222,7 +239,7 @@ class autokick(minqlx.Plugin):
     def cmd_delword(self, player, msg, channel):
         if len(msg) < 2:
             return minqlx.RET_USAGE
-        word = msg[1].lower().strip()
+        word = " ".join(msg[1:]).lower().strip()
         if word not in self.banned_words:
             return channel.reply(f"^3'{word}'^7 not in list.")
         self.db.srem(self.words_key, word)
@@ -231,14 +248,19 @@ class autokick(minqlx.Plugin):
         self.log(f"[CMD] {player.name} removed word '{word}'")
 
     def cmd_listwords(self, player, msg, channel):
-        info = []
-        if self.banned_words:
-            info.append("^3Words:^7 " + ", ".join(sorted(self.banned_words)))
-        if self.regex_patterns:
-            info.append("^3Regex:^7 " + ", ".join([r.pattern for r in self.regex_patterns]))
-        if not info:
-            info.append("^7No banned words or regex patterns set.")
-        channel.reply(" | ".join(info))
+        # Sent privately so the list is never shown to the whole server.
+        words = sorted(self.banned_words)
+        patterns = [r.pattern for r in self.regex_patterns]
+        if not words and not patterns:
+            player.tell("^7No banned words or regex patterns set.")
+            return
+        if words:
+            player.tell("^3Words:^7 " + ", ".join(words[:LIST_WORDS_LIMIT]))
+        if patterns:
+            player.tell("^3Regex:^7 " + ", ".join(patterns[:LIST_PATTERNS_LIMIT]))
+        if len(words) > LIST_WORDS_LIMIT or len(patterns) > LIST_PATTERNS_LIMIT:
+            player.tell(f"^7Showing the first {LIST_WORDS_LIMIT} words and {LIST_PATTERNS_LIMIT} patterns "
+                        f"({len(words)} words, {len(patterns)} patterns total).")
         self.log(f"[CMD] {player.name} listed banned entries.")
 
     def cmd_reloadpatterns(self, player, msg, channel):
