@@ -1,17 +1,17 @@
 # minqlx plugins
 Collection of plugins for Quake Live - Add to your server's minqlx-plugins folder<br>
 <br>
-[afkplus](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#afkpluspy)<br>
+[afkplus](https://github.com/D00MSDAYDEVICE/minqlx#afkpluspy)<br>
 [aliasesplus](https://github.com/D00MSDAYDEVICE/minqlx#aliasespluspy-right-click--save-)<br>
-[autokick](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#autokickpy-right-click--save-)<br>
-[backfire](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#backfirepy-right-click--save-)<br>
-[factoryvote](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#lastmapspy-right-click--save-)<br>
-[lastmaps](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#lastmapspy-right-click--save-)<br>
-[livescoreboard](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#livescoreboardpy-right-click--save)<br>
-[mapmanager](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#mapmanagerpy-right-click--save)<br>
-[motd (replacement)](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#motdpy-replacement-right-click--save)<br>
-[namesplus](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#namespluspy-replaces-namespy-right-click--save)<br>
-[votebanplus](https://github.com/D00MSDAYDEVICE/minqlx/blob/main/README.md#votebanpluspy-right-click--save)<br>
+[autokick](https://github.com/D00MSDAYDEVICE/minqlx/#autokickpy-right-click--save-)<br>
+[backfire](https://github.com/D00MSDAYDEVICE/minqlx/#backfirepy-right-click--save-)<br>
+[factoryvote](https://github.com/D00MSDAYDEVICE/minqlx#lastmapspy-right-click--save-)<br>
+[lastmaps](https://github.com/D00MSDAYDEVICE/minqlx/#lastmapspy-right-click--save-)<br>
+[livescoreboard](https://github.com/D00MSDAYDEVICE/minqlx#livescoreboardpy-right-click--save)<br>
+[mapmanager](https://github.com/D00MSDAYDEVICE/minqlx#mapmanagerpy-right-click--save)<br>
+[motd (replacement)](https://github.com/D00MSDAYDEVICE/minqlx#motdpy-replacement-right-click--save)<br>
+[namesplus](https://github.com/D00MSDAYDEVICE/minqlx#namespluspy-replaces-namespy-right-click--save)<br>
+[votebanplus](https://github.com/D00MSDAYDEVICE/minqlx#votebanpluspy-right-click--save)<br>
 <br>
 **QLSM:** this repository can be added in [QLSM](https://github.com/dngrtech/qlsm) under **Settings → Plugin Repositories** using `https://github.com/D00MSDAYDEVICE/minqlx`.
 `qlsm-plugins.json` gives QLSM each plugin's description, commands and an editable settings form (QLSM 1.36.0 or newer). See [Plugin Repositories](https://dngrtech.github.io/qlsm/operations/plugin-repositories/).<br>
