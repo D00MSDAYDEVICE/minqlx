@@ -18,7 +18,7 @@ import minqlx
 import threading
 import time
 
-VERSION = "v1.3"
+VERSION = "v1.4.1"
 
 # CVAR names
 VAR_WARNING = "qlx_afk_warning_seconds"
@@ -32,7 +32,7 @@ CHECK_INTERVAL = 0.33
 
 class afkplus(minqlx.Plugin):
     def __init__(self):
-        super(afkp, self).__init__()
+        super().__init__()
 
         # Create CVARs if missing
         self.set_cvar_once(VAR_WARNING, "10")
@@ -42,6 +42,7 @@ class afkplus(minqlx.Plugin):
 
         # steam_id → [last_position, inactive_seconds]
         self.positions = {}
+        self._positions_lock = threading.Lock()
 
         # steam_ids currently being punished
         self._punished_sids = set()
@@ -49,6 +50,12 @@ class afkplus(minqlx.Plugin):
 
         # Thread control
         self.running = False
+        # Bumped on every round_start/round_end so a stale monitor
+        # thread from a previous round can never keep running (and
+        # double-incrementing inactivity counters) once a new round
+        # begins. This is what stops the warning/detection thresholds
+        # from ever being reachable early.
+        self._round_token = 0
 
         # Hooks
         self.add_hook("round_start", self.handle_round_start)
@@ -57,63 +64,128 @@ class afkplus(minqlx.Plugin):
         self.add_hook("death", self.handle_death)
         self.add_hook("unload", self.handle_unload)
 
+        # Commands
+        self.add_command(
+            ("afktime", "afkdetect"),
+            self.cmd_afktime,
+            permission=3,
+            usage="<seconds>",
+        )
+
     # --------------------------------------------------
     #     Helpers — read cvars live so runtime changes
     #     take effect without a reload
     # --------------------------------------------------
 
+    def _log_unexpected(self, context, exc):
+        """Log genuinely unexpected errors; stay quiet for the routine
+        disconnect/slot-reuse race (NonexistentPlayerError) that the
+        surrounding try/except blocks are mainly there to absorb."""
+        if isinstance(exc, minqlx.NonexistentPlayerError):
+            return
+        self.logger.warning("afkplus: unexpected error in %s: %r", context, exc)
+
     @property
     def warning_time(self):
         try:
             return int(self.get_cvar(VAR_WARNING))
-        except Exception:
+        except Exception as e:
+            self._log_unexpected("reading " + VAR_WARNING, e)
             return 10
 
     @property
     def detect_time(self):
         try:
             return int(self.get_cvar(VAR_DETECTION))
-        except Exception:
+        except Exception as e:
+            self._log_unexpected("reading " + VAR_DETECTION, e)
             return 20
 
     @property
     def put_to_spec(self):
         try:
             return int(self.get_cvar(VAR_PUT_SPEC))
-        except Exception:
+        except Exception as e:
+            self._log_unexpected("reading " + VAR_PUT_SPEC, e)
             return 1
 
     @property
     def enable_punishment(self):
         try:
             return int(self.get_cvar(VAR_ENABLE_PUN))
-        except Exception:
+        except Exception as e:
+            self._log_unexpected("reading " + VAR_ENABLE_PUN, e)
             return 1
+
+    # ------------------------------
+    #     COMMANDS
+    # ------------------------------
+
+    def cmd_afktime(self, player, msg, channel):
+        """!afktime <seconds> — sets qlx_afk_detection_seconds at runtime."""
+        if len(msg) != 2:
+            player.tell("^7Usage: ^2!afktime <seconds>")
+            return minqlx.RET_USAGE
+
+        try:
+            seconds = int(msg[1])
+        except ValueError:
+            player.tell("^1Error^7: seconds must be a whole number.")
+            return minqlx.RET_STOP_ALL
+
+        if seconds <= 0:
+            player.tell("^1Error^7: seconds must be greater than 0.")
+            return minqlx.RET_STOP_ALL
+
+        wt = self.warning_time
+        if seconds <= wt:
+            player.tell(
+                "^1Error^7: detection time (^2{}^7) must be greater than "
+                "the warning time (^2{}^7).".format(seconds, wt)
+            )
+            return minqlx.RET_STOP_ALL
+
+        self.set_cvar(VAR_DETECTION, str(seconds))
+        self.msg(
+            "^7AFK detection time set to ^2{}^7 seconds by ^2{}^7.".format(
+                seconds, player.name
+            )
+        )
+        return minqlx.RET_STOP_ALL
 
     # ------------------------------
     #     ROUND START / END
     # ------------------------------
 
     def handle_round_start(self, number):
-        teams = self.teams()
-        for p in teams.get("red", []) + teams.get("blue", []):
-            try:
-                pos = p.position()
-            except Exception:
-                pos = None
-            self.positions[p.steam_id] = [pos, 0]
+        with self._positions_lock:
+            teams = self.teams()
+            for p in teams.get("red", []) + teams.get("blue", []):
+                try:
+                    pos = p.position()
+                except Exception as e:
+                    self._log_unexpected("round_start position read", e)
+                    pos = None
+                self.positions[p.steam_id] = [pos, 0]
 
         self.running = True
+        self._round_token += 1
+        token = self._round_token
         with self._punished_lock:
             self._punished_sids.clear()
 
-        self.start_monitor_thread()
+        self.start_monitor_thread(token)
 
     def handle_round_end(self, number):
         self.running = False
+        # Invalidate the current token immediately so any monitor thread
+        # still mid-sleep exits on its very next wake instead of surviving
+        # until the next round_start flips `running` back to True.
+        self._round_token += 1
         with self._punished_lock:
             self._punished_sids.clear()
-        self.positions = {}
+        with self._positions_lock:
+            self.positions = {}
 
     # ------------------------------
     #     PLAYER STATE CHANGES
@@ -123,7 +195,8 @@ class afkplus(minqlx.Plugin):
         sid = player.steam_id
 
         if new == "spectator":
-            self.positions.pop(sid, None)
+            with self._positions_lock:
+                self.positions.pop(sid, None)
             with self._punished_lock:
                 self._punished_sids.discard(sid)
             return
@@ -131,19 +204,23 @@ class afkplus(minqlx.Plugin):
         if new in ["red", "blue"]:
             try:
                 pos = player.position()
-            except Exception:
+            except Exception as e:
+                self._log_unexpected("team_switch position read", e)
                 pos = None
-            self.positions[sid] = [pos, 0]
+            with self._positions_lock:
+                self.positions[sid] = [pos, 0]
 
     def handle_death(self, player, killer, data):
         sid = player.steam_id
-        self.positions.pop(sid, None)
+        with self._positions_lock:
+            self.positions.pop(sid, None)
         with self._punished_lock:
             self._punished_sids.discard(sid)
 
     def handle_unload(self, plugin):
         if plugin == self.__class__.__name__:
             self.running = False
+            self._round_token += 1
             with self._punished_lock:
                 self._punished_sids.clear()
 
@@ -152,46 +229,64 @@ class afkplus(minqlx.Plugin):
     # ------------------------------
 
     @minqlx.thread
-    def start_monitor_thread(self):
-        while self.running and self.game and getattr(self.game, "state", None) == "in_progress":
+    def start_monitor_thread(self, token):
+        while (
+            self.running
+            and self._round_token == token
+            and self.game
+            and getattr(self.game, "state", None) == "in_progress"
+        ):
             teams = self.teams()
             for p in teams.get("red", []) + teams.get("blue", []):
                 try:
                     if not p.is_alive:
                         continue
-                except Exception:
+                except Exception as e:
+                    self._log_unexpected("monitor is_alive read", e)
                     continue
 
                 sid = p.steam_id
                 try:
                     cur_pos = p.position()
-                except Exception:
+                except Exception as e:
+                    self._log_unexpected("monitor position read", e)
                     cur_pos = None
 
-                if sid not in self.positions:
-                    self.positions[sid] = [cur_pos, 0]
+                # Read-modify-write of the shared counter happens under
+                # lock so a lingering/duplicate thread can never double
+                # -increment a player's inactivity time and make the
+                # warning or detection threshold trip earlier than the
+                # configured number of real seconds.
+                with self._positions_lock:
+                    if sid not in self.positions:
+                        self.positions[sid] = [cur_pos, 0]
 
-                last_pos, secs = self.positions[sid]
+                    last_pos, secs = self.positions[sid]
 
-                if cur_pos == last_pos:
-                    secs += CHECK_INTERVAL
-                    self.positions[sid] = [cur_pos, secs]
+                    if cur_pos == last_pos:
+                        secs += CHECK_INTERVAL
+                        self.positions[sid] = [cur_pos, secs]
+                        moved = False
+                    else:
+                        self.positions[sid] = [cur_pos, 0]
+                        moved = True
 
-                    wt = self.warning_time
-                    dt = self.detect_time
-
-                    # Warning threshold crossing
-                    if secs >= wt and secs - CHECK_INTERVAL < wt:
-                        self.warn_afk(p)
-
-                    # Detection threshold crossing
-                    if secs >= dt and secs - CHECK_INTERVAL < dt:
-                        self.handle_afk_detected(p)
-                else:
-                    self.positions[sid] = [cur_pos, 0]
+                if moved:
                     # Player moved — cancel any ongoing punishment
                     with self._punished_lock:
                         self._punished_sids.discard(sid)
+                    continue
+
+                wt = self.warning_time
+                dt = self.detect_time
+
+                # Warning threshold crossing
+                if secs >= wt and secs - CHECK_INTERVAL < wt:
+                    self.warn_afk(p)
+
+                # Detection threshold crossing
+                if secs >= dt and secs - CHECK_INTERVAL < dt:
+                    self.handle_afk_detected(p)
 
             time.sleep(CHECK_INTERVAL)
 
@@ -204,13 +299,14 @@ class afkplus(minqlx.Plugin):
         msg = "You have been inactive for {} seconds...".format(self.warning_time)
         try:
             minqlx.send_server_command(player.id, 'cp "{}"'.format(msg))
-        except Exception:
-            pass
+        except Exception as e:
+            self._log_unexpected("warn_afk send_server_command", e)
 
     # Called from the monitor thread — push all game writes to next_frame
     def handle_afk_detected(self, player):
         sid = player.steam_id
-        secs = int(self.positions[sid][1]) if sid in self.positions else 0
+        with self._positions_lock:
+            secs = int(self.positions[sid][1]) if sid in self.positions else 0
         client_id = player.id
 
         @minqlx.next_frame
@@ -255,7 +351,8 @@ class afkplus(minqlx.Plugin):
             # disconnect / slot reuse
             try:
                 p = self.player(client_id)
-            except Exception:
+            except Exception as e:
+                self._log_unexpected("punishment loop player resolve", e)
                 p = None
 
             if not p or p.steam_id != sid:
@@ -267,7 +364,8 @@ class afkplus(minqlx.Plugin):
             try:
                 alive = p.is_alive
                 hp = p.health
-            except Exception:
+            except Exception as e:
+                self._log_unexpected("punishment loop is_alive/health read", e)
                 alive = False
                 hp = 0
 
@@ -292,25 +390,27 @@ class afkplus(minqlx.Plugin):
         """Slap the player from the game frame."""
         try:
             p = self.player(client_id)
-        except Exception:
+        except Exception as e:
+            self._log_unexpected("apply_punishment player resolve", e)
             return
         if not p or p.steam_id != sid:
             return
         try:
             minqlx.console_command("slap {} {}".format(client_id, damage))
-        except Exception:
-            pass
+        except Exception as e:
+            self._log_unexpected("apply_punishment slap", e)
 
     @minqlx.next_frame
     def move_to_spectator(self, client_id, sid):
         """Move player to spec from the game frame, with identity check."""
         try:
             p = self.player(client_id)
-        except Exception:
+        except Exception as e:
+            self._log_unexpected("move_to_spectator player resolve", e)
             return
         if not p or p.steam_id != sid:
             return
         try:
             p.put("spectator")
-        except Exception:
-            pass
+        except Exception as e:
+            self._log_unexpected("move_to_spectator put", e)
