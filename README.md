@@ -4,7 +4,7 @@ Collection of plugins for Quake Live - Add to your server's minqlx-plugins folde
 [afkplus](https://github.com/D00MSDAYDEVICE/minqlx#afkpluspy-right-click--save-)<br>
 [aliasesplus](https://github.com/D00MSDAYDEVICE/minqlx#aliasespluspy-right-click--save-)<br>
 [autokick](https://github.com/D00MSDAYDEVICE/minqlx/#autokickpy-right-click--save-)<br>
-[backfill](https://github.com/D00MSDAYDEVICE/minqlx/#backfirepy-right-click--save-)<br>
+[backfill](https://github.com/D00MSDAYDEVICE/minqlx/#backfillpy-right-click--save-)<br>
 [backfire](https://github.com/D00MSDAYDEVICE/minqlx/#backfirepy-right-click--save-)<br>
 [factoryvote](https://github.com/D00MSDAYDEVICE/minqlx#lastmapspy-right-click--save-)<br>
 [lastmaps](https://github.com/D00MSDAYDEVICE/minqlx/#lastmapspy-right-click--save-)<br>
