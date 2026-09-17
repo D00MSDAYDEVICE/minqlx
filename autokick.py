@@ -4,9 +4,12 @@
 
 # This is an extension plugin for minqlx to autokick players based on chat
 # CVARS:
-# qlx_autokickWarnings "1" - offence that triggers the kick
+# qlx_autokickWarnings "1" - offence that triggers the kick (kick/silent modes)
 #                            (1 = kick on first offence, 3 = warn twice, kick on third)
 # qlx_autokickMode "kick" or "warn" or "silent"
+#   kick   - warn in chat, then kick on offence N
+#   warn   - always privately warn the player, never kick
+#   silent - suppress with no feedback at all, then kick on offence N
 
 # COMMANDS:
 # !addword <word or phrase>
@@ -38,7 +41,7 @@ LIST_PATTERNS_LIMIT = 20
 
 class autokick(minqlx.Plugin):
     def __init__(self):
-        self.version = "1.3"
+        self.version = "1.4"
         self.add_command("akv", self.cmd_version, 0)
 
         # Hooks
@@ -60,7 +63,8 @@ class autokick(minqlx.Plugin):
         # qlx_autokickMode options:
         #   kick   - warn, then kick on offence N (N = qlx_autokickWarnings)
         #   warn   - suppress message and notify the player, never kick
-        #   silent - suppress message with no notification at all
+        #   silent - suppress message with no notification, but still kick
+        #            on offence N (N = qlx_autokickWarnings), same as kick mode
 
         self.reload_cvars()
 
@@ -190,8 +194,18 @@ class autokick(minqlx.Plugin):
         sid = player.steam_id
 
         if self.mode == "silent":
-            # Suppress with no feedback at all
-            self.log(f"[SILENT] {player.name}'s message suppressed for '{trigger}'")
+            # Suppress with no feedback at all, but still escalate to a kick
+            # after qlx_autokickWarnings offences, same threshold as kick mode.
+            count = self.warnings.get(sid, 0) + 1
+            self.warnings[sid] = count
+
+            if count < self.max_warnings:
+                self.log(f"[SILENT] {player.name}'s message suppressed for '{trigger}' "
+                          f"({count}/{self.max_warnings})")
+            else:
+                self.kick_player(player, trigger)
+                self.log(f"[SILENT-KICK] {player.name} kicked after {count} warnings for '{trigger}'")
+                del self.warnings[sid]
             return
 
         if self.mode == "warn":
