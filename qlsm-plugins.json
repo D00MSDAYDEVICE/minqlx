@@ -2,7 +2,7 @@
   "plugins": [
     {
       "filename": "afkplus.py",
-      "label": "AFK Plus",
+      "label": "AFK Plus v1.5",
       "description": "Detects players who stop moving during a round, warns them, then moves them to spectator. Admins can skip the punishment and spectate AFK players straight away.",
       "runtime": "minqlx",
       "requires_qlsm_version": "1.36.0",
@@ -80,7 +80,7 @@
     },
     {
       "filename": "aliasesplus.py",
-      "label": "Aliases Plus",
+      "label": "Aliases Plus v1.0",
       "description": "Modified aliases.py (replacement) to list player aliases without lagging the server. Results are limited or sent in chunks.",
       "runtime": "minqlx",
       "requires_qlsm_version": "1.36.0",
@@ -128,7 +128,7 @@
     },
     {
       "filename": "autokick.py",
-      "label": "Auto Kick",
+      "label": "Auto Kick v1.4",
       "description": "Automatically kicks players (after a warning) for using words or phrases from the word list. Colour codes are ignored when matching. Regex patterns can also go in autokick_patterns.txt, and incidents are logged to autokick.log and, by default, to the server chat log (chatlogs/chat.log).",
       "runtime": "minqlx",
       "requires_qlsm_version": "1.36.0",
@@ -187,7 +187,7 @@
     },
     {
       "filename": "backfill.py",
-      "label": "Backfill",
+      "label": "Backfill v2.43",
       "description": "A fork of bots.py by BarelyMiSSeD with better specqueue dependency management, Bot mute capability without quiet.py and other minor bugfixes.",
       "runtime": "minqlx",
       "requires_qlsm_version": "1.36.0",
@@ -217,7 +217,7 @@
     },
     {
       "filename": "backfire.py",
-      "label": "Backfire",
+      "label": "Backfire v1.2",
       "description": "Reflects team damage back onto the attacker (non-lethally, with a sound cue) and logs every incident. Needs g_friendlyfire 1 and a minqlx build with the damage hook (Shino's fork: github.com/mgaertne/minqlx).",
       "runtime": "minqlx",
       "requires_qlsm_version": "1.36.0",
@@ -262,7 +262,7 @@
     },
     {
       "filename": "factoryvote.py",
-      "label": "Factory Vote",
+      "label": "Factory Vote v1.8",
       "description": "Lets players vote for a factory listed in baseq3/factories.txt. A matching <factory>.cfg in the plugins folder is run when the vote passes, and restore.cfg can reset the settings afterwards.",
       "runtime": "minqlx",
       "requires_qlsm_version": "1.36.0",
@@ -308,7 +308,7 @@
     },
     {
       "filename": "lastmaps.py",
-      "label": "Last Maps",
+      "label": "Last Maps v1.2.3",
       "description": "Shows the last 5 played maps. Useful to avoid voting overplayed maps.",
       "runtime": "minqlx",
       "requires_qlsm_version": "1.36.0",
@@ -330,7 +330,7 @@
     },
     {
       "filename": "livescoreboard.py",
-      "label": "Live Scoreboard",
+      "label": "Live Scoreboard v1.7",
       "description": "Writes the live score to an HTML file, for example to show it in OBS.",
       "runtime": "minqlx",
       "requires_qlsm_version": "1.36.0",
@@ -473,7 +473,7 @@
     },
     {
       "filename": "mapmanager.py",
-      "label": "Map Manager",
+      "label": "Map Manager v1.3.2",
       "description": "Manages map rotation from mappool.txt, enforces vote cooldowns on recently played maps, and tracks off-pool callvotes too. Includes the features of lastmaps.py, so don't enable both.",
       "runtime": "minqlx",
       "requires_qlsm_version": "1.36.0",
@@ -673,7 +673,7 @@
     },
     {
       "filename": "namesplus.py",
-      "label": "Names Plus",
+      "label": "Names Plus v1.6.1",
       "description": "Replaces names.py. Lets admins set player names (by player or Steam ID), which persist across reconnects until cleared. Unloads names.py if it's loaded, so remove \"names\" (and DEFAULT) from qlx_plugins.",
       "runtime": "minqlx",
       "requires_qlsm_version": "1.36.0",
@@ -729,7 +729,7 @@
     },
     {
       "filename": "votebanplus.py",
-      "label": "Voteban Plus",
+      "label": "Voteban Plus v1.0",
       "description": "Plugin for basic callvote management",
       "runtime": "minqlx",
       "requires_qlsm_version": "1.36.0",
