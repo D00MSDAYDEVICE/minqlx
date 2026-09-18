@@ -13,12 +13,23 @@
 # - qlx_afk_enable_punishment "1"
 #
 # If qlx_afk_enable_punishment is 0, player will be automatically spec'd at time set
+#
+# Activity is judged primarily by view pitch (vertical look angle), not
+# raw position. Pitch only ever changes from the player's own mouse/
+# joystick input — physics (rocket/grenade knockback, being bumped by
+# another player, pushers, teleporters, even this plugin's own slap
+# punishment) never touches it. That makes it immune to the false
+# negatives raw position tracking had: a truly AFK player getting
+# knocked around no longer looks "active", and a player holding an
+# angle while tracking a target with the mouse (not moving their feet)
+# no longer gets falsely flagged. Position is still tracked, but only
+# as a fallback if pitch can't be read on a given minqlx build.
 
 import minqlx
 import threading
 import time
 
-VERSION = "v1.4.1"
+VERSION = "v1.5"
 
 # CVAR names
 VAR_WARNING = "qlx_afk_warning_seconds"
@@ -28,6 +39,12 @@ VAR_ENABLE_PUN = "qlx_afk_enable_punishment"
 
 # Movement check interval
 CHECK_INTERVAL = 0.33
+
+# Degrees of pitch change below which the view is considered unchanged.
+# A view with zero input should read back bit-identical between samples,
+# so this is just a small safety margin against engine-side float/angle
+# quantization noise — real mouse movement is far larger than this.
+PITCH_EPSILON = 0.05
 
 
 class afkplus(minqlx.Plugin):
@@ -40,9 +57,14 @@ class afkplus(minqlx.Plugin):
         self.set_cvar_once(VAR_PUT_SPEC, "1")
         self.set_cvar_once(VAR_ENABLE_PUN, "1")
 
-        # steam_id → [last_position, inactive_seconds]
+        # steam_id → [last_position, last_pitch, inactive_seconds]
         self.positions = {}
         self._positions_lock = threading.Lock()
+
+        # Set once if viewangles turn out to be unreadable on this
+        # minqlx build, so we log the fallback exactly once instead of
+        # spamming the log every check interval.
+        self._pitch_unavailable_logged = False
 
         # steam_ids currently being punished
         self._punished_sids = set()
@@ -84,6 +106,29 @@ class afkplus(minqlx.Plugin):
         if isinstance(exc, minqlx.NonexistentPlayerError):
             return
         self.logger.warning("afkplus: unexpected error in %s: %r", context, exc)
+
+    def _read_pitch(self, p):
+        """Current vertical view angle (pitch), in degrees.
+
+        Returns None if it can't be read — either a routine disconnect
+        race (handled quietly) or, on the first occurrence only, a build
+        of minqlx that doesn't expose viewangles the way this expects,
+        which is logged once so it can be fixed rather than silently
+        degrading forever. Callers fall back to position-only detection
+        for that player/tick when this returns None.
+        """
+        try:
+            return p.state().viewangles[0]  # index 0 == pitch
+        except minqlx.NonexistentPlayerError:
+            return None
+        except Exception as e:
+            if not self._pitch_unavailable_logged:
+                self._pitch_unavailable_logged = True
+                self.logger.warning(
+                    "afkplus: viewangles not readable (%r) — falling back to "
+                    "position-only AFK detection for this session.", e
+                )
+            return None
 
     @property
     def warning_time(self):
@@ -166,7 +211,8 @@ class afkplus(minqlx.Plugin):
                 except Exception as e:
                     self._log_unexpected("round_start position read", e)
                     pos = None
-                self.positions[p.steam_id] = [pos, 0]
+                pitch = self._read_pitch(p)
+                self.positions[p.steam_id] = [pos, pitch, 0]
 
         self.running = True
         self._round_token += 1
@@ -207,8 +253,9 @@ class afkplus(minqlx.Plugin):
             except Exception as e:
                 self._log_unexpected("team_switch position read", e)
                 pos = None
+            pitch = self._read_pitch(player)
             with self._positions_lock:
-                self.positions[sid] = [pos, 0]
+                self.positions[sid] = [pos, pitch, 0]
 
     def handle_death(self, player, killer, data):
         sid = player.steam_id
@@ -251,6 +298,7 @@ class afkplus(minqlx.Plugin):
                 except Exception as e:
                     self._log_unexpected("monitor position read", e)
                     cur_pos = None
+                cur_pitch = self._read_pitch(p)
 
                 # Read-modify-write of the shared counter happens under
                 # lock so a lingering/duplicate thread can never double
@@ -259,17 +307,31 @@ class afkplus(minqlx.Plugin):
                 # configured number of real seconds.
                 with self._positions_lock:
                     if sid not in self.positions:
-                        self.positions[sid] = [cur_pos, 0]
+                        self.positions[sid] = [cur_pos, cur_pitch, 0]
 
-                    last_pos, secs = self.positions[sid]
+                    last_pos, last_pitch, secs = self.positions[sid]
 
-                    if cur_pos == last_pos:
-                        secs += CHECK_INTERVAL
-                        self.positions[sid] = [cur_pos, secs]
-                        moved = False
+                    # Pitch is the deciding signal: it only moves from the
+                    # player's own input, so a pitch change is trustworthy
+                    # evidence of activity even if position didn't change
+                    # (holding an angle while tracking a target), and a
+                    # position change with no pitch change is NOT treated
+                    # as activity (knockback, a bump from another player,
+                    # or our own slap punishment moving them). If pitch is
+                    # unreadable this tick, fall back to the old
+                    # position-only comparison instead of losing detection.
+                    if cur_pitch is None or last_pitch is None:
+                        active = cur_pos != last_pos
                     else:
-                        self.positions[sid] = [cur_pos, 0]
+                        active = abs(cur_pitch - last_pitch) >= PITCH_EPSILON
+
+                    if active:
+                        self.positions[sid] = [cur_pos, cur_pitch, 0]
                         moved = True
+                    else:
+                        secs += CHECK_INTERVAL
+                        self.positions[sid] = [cur_pos, cur_pitch, secs]
+                        moved = False
 
                 if moved:
                     # Player moved — cancel any ongoing punishment
@@ -306,7 +368,7 @@ class afkplus(minqlx.Plugin):
     def handle_afk_detected(self, player):
         sid = player.steam_id
         with self._positions_lock:
-            secs = int(self.positions[sid][1]) if sid in self.positions else 0
+            secs = int(self.positions[sid][2]) if sid in self.positions else 0
         client_id = player.id
 
         @minqlx.next_frame
