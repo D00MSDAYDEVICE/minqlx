@@ -24,12 +24,44 @@
 # angle while tracking a target with the mouse (not moving their feet)
 # no longer gets falsely flagged. Position is still tracked, but only
 # as a fallback if pitch can't be read on a given minqlx build.
+#
+# Runs on both minqlx and minqlxtended from this one file. On minqlxtended
+# pitch is read from the live playerState (gclient.ps.viewangles); stock
+# minqlx's player_state() has no viewangles, so there it falls back to
+# position-only detection (logged once), exactly as before.
 
-import minqlx
+import sys
 import threading
 import time
 
-VERSION = "v1.5"
+# --- Runtime detection -------------------------------------------------------
+# The host runtime has already imported its own package before loading
+# plugins, so sys.modules tells us which one we're inside; fall back to a
+# plain import attempt otherwise.
+if "minqlxtended" in sys.modules:
+    import minqlxtended as qlx
+    IS_EXTENDED = True
+elif "minqlx" in sys.modules:
+    import minqlx as qlx
+    IS_EXTENDED = False
+else:
+    try:
+        import minqlxtended as qlx
+        IS_EXTENDED = True
+    except ImportError:
+        import minqlx as qlx
+        IS_EXTENDED = False
+
+# minqlxtended replaced the RET_* ints with the Return enum and deliberately
+# does not export the old names.
+if IS_EXTENDED:
+    RET_STOP_ALL = qlx.Return.STOP_ALL
+    RET_USAGE = qlx.Return.USAGE
+else:
+    RET_STOP_ALL = qlx.RET_STOP_ALL
+    RET_USAGE = qlx.RET_USAGE
+
+VERSION = "v1.6"
 
 # CVAR names
 VAR_WARNING = "qlx_afk_warning_seconds"
@@ -47,7 +79,7 @@ CHECK_INTERVAL = 0.33
 PITCH_EPSILON = 0.05
 
 
-class afkplus(minqlx.Plugin):
+class afkplus(qlx.Plugin):
     def __init__(self):
         super().__init__()
 
@@ -81,7 +113,15 @@ class afkplus(minqlx.Plugin):
 
         # Hooks
         self.add_hook("round_start", self.handle_round_start)
-        self.add_hook("round_end", self.handle_round_end)
+        # round_end is (data) on minqlx and
+        # (round_number, winning_team, time) on minqlxtended. minqlxtended
+        # validates handler signatures at registration, so each runtime gets
+        # its own wrapper. death is 3 args on both (the unused third one
+        # changed meaning), so it needs no wrapper.
+        if IS_EXTENDED:
+            self.add_hook("round_end", self._ext_round_end)
+        else:
+            self.add_hook("round_end", self._legacy_round_end)
         self.add_hook("team_switch", self.handle_team_switch)
         self.add_hook("death", self.handle_death)
         self.add_hook("unload", self.handle_unload)
@@ -103,7 +143,7 @@ class afkplus(minqlx.Plugin):
         """Log genuinely unexpected errors; stay quiet for the routine
         disconnect/slot-reuse race (NonexistentPlayerError) that the
         surrounding try/except blocks are mainly there to absorb."""
-        if isinstance(exc, minqlx.NonexistentPlayerError):
+        if isinstance(exc, qlx.NonexistentPlayerError):
             return
         self.logger.warning("afkplus: unexpected error in %s: %r", context, exc)
 
@@ -118,8 +158,11 @@ class afkplus(minqlx.Plugin):
         for that player/tick when this returns None.
         """
         try:
+            if IS_EXTENDED:
+                # Live playerState view; viewangles[0] == pitch
+                return p.gclient.ps.viewangles[0]
             return p.state().viewangles[0]  # index 0 == pitch
-        except minqlx.NonexistentPlayerError:
+        except qlx.NonexistentPlayerError:
             return None
         except Exception as e:
             if not self._pitch_unavailable_logged:
@@ -129,6 +172,13 @@ class afkplus(minqlx.Plugin):
                     "position-only AFK detection for this session.", e
                 )
             return None
+
+    def _read_position(self, p):
+        """Current position. A method call on minqlx, a property on
+        minqlxtended."""
+        if IS_EXTENDED:
+            return p.position
+        return p.position()
 
     @property
     def warning_time(self):
@@ -170,17 +220,17 @@ class afkplus(minqlx.Plugin):
         """!afktime <seconds> — sets qlx_afk_detection_seconds at runtime."""
         if len(msg) != 2:
             player.tell("^7Usage: ^2!afktime <seconds>")
-            return minqlx.RET_USAGE
+            return RET_USAGE
 
         try:
             seconds = int(msg[1])
         except ValueError:
             player.tell("^1Error^7: seconds must be a whole number.")
-            return minqlx.RET_STOP_ALL
+            return RET_STOP_ALL
 
         if seconds <= 0:
             player.tell("^1Error^7: seconds must be greater than 0.")
-            return minqlx.RET_STOP_ALL
+            return RET_STOP_ALL
 
         wt = self.warning_time
         if seconds <= wt:
@@ -188,7 +238,7 @@ class afkplus(minqlx.Plugin):
                 "^1Error^7: detection time (^2{}^7) must be greater than "
                 "the warning time (^2{}^7).".format(seconds, wt)
             )
-            return minqlx.RET_STOP_ALL
+            return RET_STOP_ALL
 
         self.set_cvar(VAR_DETECTION, str(seconds))
         self.msg(
@@ -196,7 +246,7 @@ class afkplus(minqlx.Plugin):
                 seconds, player.name
             )
         )
-        return minqlx.RET_STOP_ALL
+        return RET_STOP_ALL
 
     # ------------------------------
     #     ROUND START / END
@@ -207,7 +257,7 @@ class afkplus(minqlx.Plugin):
             teams = self.teams()
             for p in teams.get("red", []) + teams.get("blue", []):
                 try:
-                    pos = p.position()
+                    pos = self._read_position(p)
                 except Exception as e:
                     self._log_unexpected("round_start position read", e)
                     pos = None
@@ -222,7 +272,13 @@ class afkplus(minqlx.Plugin):
 
         self.start_monitor_thread(token)
 
-    def handle_round_end(self, number):
+    def _legacy_round_end(self, data):
+        return self.handle_round_end()
+
+    def _ext_round_end(self, round_number, winning_team, round_time):
+        return self.handle_round_end()
+
+    def handle_round_end(self):
         self.running = False
         # Invalidate the current token immediately so any monitor thread
         # still mid-sleep exits on its very next wake instead of surviving
@@ -249,7 +305,7 @@ class afkplus(minqlx.Plugin):
 
         if new in ["red", "blue"]:
             try:
-                pos = player.position()
+                pos = self._read_position(player)
             except Exception as e:
                 self._log_unexpected("team_switch position read", e)
                 pos = None
@@ -275,7 +331,7 @@ class afkplus(minqlx.Plugin):
     #     MONITOR THREAD
     # ------------------------------
 
-    @minqlx.thread
+    @qlx.thread
     def start_monitor_thread(self, token):
         while (
             self.running
@@ -294,7 +350,7 @@ class afkplus(minqlx.Plugin):
 
                 sid = p.steam_id
                 try:
-                    cur_pos = p.position()
+                    cur_pos = self._read_position(p)
                 except Exception as e:
                     self._log_unexpected("monitor position read", e)
                     cur_pos = None
@@ -356,11 +412,11 @@ class afkplus(minqlx.Plugin):
     #     AFK HANDLING
     # ------------------------------
 
-    @minqlx.next_frame
+    @qlx.next_frame
     def warn_afk(self, player):
         msg = "You have been inactive for {} seconds...".format(self.warning_time)
         try:
-            minqlx.send_server_command(player.id, 'cp "{}"'.format(msg))
+            qlx.send_server_command(player.id, 'cp "{}"'.format(msg))
         except Exception as e:
             self._log_unexpected("warn_afk send_server_command", e)
 
@@ -371,7 +427,7 @@ class afkplus(minqlx.Plugin):
             secs = int(self.positions[sid][2]) if sid in self.positions else 0
         client_id = player.id
 
-        @minqlx.next_frame
+        @qlx.next_frame
         def announce():
             self.msg("^1{}^7 has been inactive for ^1{}^7 seconds!".format(player.name, secs))
 
@@ -393,7 +449,7 @@ class afkplus(minqlx.Plugin):
     #     PUNISHMENT LOOP
     # ------------------------------
 
-    @minqlx.thread
+    @qlx.thread
     def start_punishment_loop(self, client_id, sid, damage=10, delay=0.5):
         """
         Repeatedly slap the AFK player until they move, die, or the round ends.
@@ -438,7 +494,7 @@ class afkplus(minqlx.Plugin):
                     self.move_to_spectator(client_id, sid)
                 break
 
-            # Deal damage — slap via console command (safe from thread via engine queue)
+            # Deal damage — queued onto the game frame by apply_punishment
             self.apply_punishment(client_id, sid, damage)
 
             time.sleep(delay)
@@ -447,7 +503,7 @@ class afkplus(minqlx.Plugin):
         with self._punished_lock:
             self._punished_sids.discard(sid)
 
-    @minqlx.next_frame
+    @qlx.next_frame
     def apply_punishment(self, client_id, sid, damage):
         """Slap the player from the game frame."""
         try:
@@ -458,11 +514,13 @@ class afkplus(minqlx.Plugin):
         if not p or p.steam_id != sid:
             return
         try:
-            minqlx.console_command("slap {} {}".format(client_id, damage))
+            # Player.slap exists on both runtimes (minqlx routes it through
+            # the "slap" console command, minqlxtended applies it directly).
+            p.slap(damage)
         except Exception as e:
             self._log_unexpected("apply_punishment slap", e)
 
-    @minqlx.next_frame
+    @qlx.next_frame
     def move_to_spectator(self, client_id, sid):
         """Move player to spec from the game frame, with identity check."""
         try:
