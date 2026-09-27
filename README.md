@@ -173,7 +173,7 @@ Manages map rotation, enforces cooldowns on recently played maps, and tracks off
 `manager_allownewvotes` "1"  - Allow callvote map after a vote already passed this round, 0 = block it<br>
 
 
-## motdplus.py (replacement for motd) [right-click & save](https://raw.githubusercontent.com/D00MSDAYDEVICE/minqlx/refs/heads/main/motd.py)<br>
+## motdplus.py (replacement for motd) [right-click & save](https://raw.githubusercontent.com/D00MSDAYDEVICE/minqlx/refs/heads/main/motdplus.py)<br>
 Extended motd to multiple lines to overcome character length and format limitations/ease of use<br>
 <br>
 **Commands:**<br>
