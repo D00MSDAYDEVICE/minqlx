@@ -1,4 +1,13 @@
-# votebanplus.py is a plugin for minqlx that permanently stops a player
+# votebanplus.py - v1.1
+#
+# Version history:
+#   1.1 - Dual-runtime: one file now loads on both minqlx and minqlxtended
+#         (runtime detected at import; hook priority, return codes and the
+#         database driver mapped per runtime).
+#   1.0 - Initial release: merged voteban.py (BarelyMiSSeD) and banvote
+#         (kanzo / cstewart90) into a single Redis-hash-backed plugin.
+#
+# votebanplus.py is a plugin for minqlx / minqlxtended that permanently stops a player
 # from being able to call votes on the server, until an admin removes the
 # ban.
 #
@@ -20,6 +29,9 @@
 #  - hset/hexists/hdel/hgetall are used instead of hmset/zadd, which avoids
 #    the redis-py 2.x/3.x signature differences those calls are prone to.
 #    So this should work on old and new servers/python versions
+#  - Runs on both minqlx and minqlxtended from this one file. The runtime is
+#    detected at import, and hook priority / return codes are mapped to the
+#    old integer constants (minqlx) or the new enums (minqlxtended).
 """
 Set this cvar in your server.cfg (or wherever you set your minqlx cvars):
 qlx_votebanplusAdmin "3" - minqlx permission level required to use the
@@ -30,8 +42,43 @@ The protection level (a player's minqlx permission level at or above which
 they can never be vote-banned) is hardcoded to 3 and is not configurable.
 """
 
-import minqlx
-import minqlx.database
+import importlib
+import sys
+
+# --- Runtime detection -------------------------------------------------------
+# The host runtime has already imported its own package before loading
+# plugins, so sys.modules tells us which one we're inside; fall back to a
+# plain import attempt otherwise.
+if "minqlxtended" in sys.modules:
+    import minqlxtended as qlx
+    IS_EXTENDED = True
+elif "minqlx" in sys.modules:
+    import minqlx as qlx
+    IS_EXTENDED = False
+else:
+    try:
+        import minqlxtended as qlx
+        IS_EXTENDED = True
+    except ImportError:
+        import minqlx as qlx
+        IS_EXTENDED = False
+
+_qlx_database = importlib.import_module(qlx.__name__ + ".database")
+
+# minqlxtended replaced the RET_*/PRI_* ints with enums and deliberately does
+# not export the old names.
+if IS_EXTENDED:
+    RET_STOP_EVENT = qlx.Return.STOP_EVENT
+    RET_STOP_ALL = qlx.Return.STOP_ALL
+    RET_USAGE = qlx.Return.USAGE
+    PRI_HIGH = qlx.Priority.HIGH
+else:
+    RET_STOP_EVENT = qlx.RET_STOP_EVENT
+    RET_STOP_ALL = qlx.RET_STOP_ALL
+    RET_USAGE = qlx.RET_USAGE
+    PRI_HIGH = qlx.PRI_HIGH
+
+VERSION = "1.1"
 
 BANVOTE_KEY = "minqlx:votebanplus:banned"
 PLAYER_KEY = "minqlx:players:{}"
@@ -39,12 +86,12 @@ PROTECTION_LEVEL = 3
 MAX_LIST_DISPLAY = 50
 
 
-class votebanplus(minqlx.Plugin):
-    database = minqlx.database.Redis
+class votebanplus(qlx.Plugin):
+    database = _qlx_database.Redis
 
     def __init__(self):
         super().__init__()
-        self.add_hook("vote_called", self.handle_vote_called, priority=minqlx.PRI_HIGH)
+        self.add_hook("vote_called", self.handle_vote_called, priority=PRI_HIGH)
 
         self.set_cvar_once("qlx_votebanplusAdmin", "3")
         admin_level = int(self.get_cvar("qlx_votebanplusAdmin"))
@@ -61,16 +108,16 @@ class votebanplus(minqlx.Plugin):
             # is someone else around to be annoyed by it.
             if len(self.teams()["free"] + self.teams()["red"] + self.teams()["blue"]) > 1:
                 player.tell("^1You are not permitted to callvote on this server.")
-                return minqlx.RET_STOP_ALL
+                return RET_STOP_ALL
 
     def cmd_voteban(self, player, msg, channel):
         """Vote-bans a player permanently, by client id or SteamID64."""
         if len(msg) < 2:
-            return minqlx.RET_USAGE
+            return RET_USAGE
 
         steam_id, name = self.resolve_player(msg[1], channel)
         if steam_id is None:
-            return minqlx.RET_STOP_EVENT
+            return RET_STOP_EVENT
 
         if len(msg) > 2:
             name = " ".join(msg[2:])
@@ -81,24 +128,24 @@ class votebanplus(minqlx.Plugin):
         if self.db.has_permission(steam_id, PROTECTION_LEVEL):
             channel.reply("^7{}^3 has permission level {} or higher and cannot be vote-banned."
                            .format(display_name, PROTECTION_LEVEL))
-            return minqlx.RET_STOP_EVENT
+            return RET_STOP_EVENT
 
         if self.db.hexists(BANVOTE_KEY, steam_id):
             channel.reply("^7{}^3 is already vote-banned.".format(display_name))
-            return minqlx.RET_STOP_EVENT
+            return RET_STOP_EVENT
 
         self.db.hset(BANVOTE_KEY, steam_id, name or "Unknown")
         channel.reply("^7{}^1 has been banned from voting.".format(display_name))
-        return minqlx.RET_STOP_EVENT
+        return RET_STOP_EVENT
 
     def cmd_voteunban(self, player, msg, channel):
         """Removes a player's vote ban."""
         if len(msg) < 2:
-            return minqlx.RET_USAGE
+            return RET_USAGE
 
         steam_id, name = self.resolve_player(msg[1], channel)
         if steam_id is None:
-            return minqlx.RET_STOP_EVENT
+            return RET_STOP_EVENT
 
         if not name:
             name = self.lookup_name(steam_id)
@@ -109,14 +156,14 @@ class votebanplus(minqlx.Plugin):
             channel.reply("^7{}^2 is no longer banned from voting.".format(display_name))
         else:
             channel.reply("^7{}^3 is not banned from voting.".format(display_name))
-        return minqlx.RET_STOP_EVENT
+        return RET_STOP_EVENT
 
     def cmd_list_votebans(self, player, msg, channel):
         """Lists everyone currently vote-banned."""
         banned = self.db.hgetall(BANVOTE_KEY)
         if not banned:
             channel.reply("^3No one is currently banned from voting.")
-            return minqlx.RET_STOP_EVENT
+            return RET_STOP_EVENT
 
         entries = sorted(banned.items(), key=lambda kv: int(kv[0]))
         lines = ["^5Vote-banned players^7 ({}):" .format(len(entries))]
@@ -127,7 +174,7 @@ class votebanplus(minqlx.Plugin):
             lines.append("^7...and {} more.".format(len(entries) - MAX_LIST_DISPLAY))
 
         channel.reply("\n".join(lines))
-        return minqlx.RET_STOP_EVENT
+        return RET_STOP_EVENT
 
     def resolve_player(self, ident, channel):
         """Resolves a client id or SteamID64 to (steam_id, name).
@@ -143,7 +190,7 @@ class votebanplus(minqlx.Plugin):
         if 0 <= ident <= 63:
             try:
                 target_player = self.player(ident)
-            except minqlx.NonexistentPlayerError:
+            except qlx.NonexistentPlayerError:
                 target_player = None
             if not target_player:
                 channel.reply("^3There is no one on the server using that Client ID.")
