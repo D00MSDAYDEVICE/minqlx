@@ -1,21 +1,21 @@
 # minqlx plugins
-Collection of plugins for Quake Live - Add to your server's minqlx-plugins folder<br>
-<br>
-[afkplus](https://github.com/D00MSDAYDEVICE/minqlx#afkpluspy-right-click--save-)<br>
+Collection of plugins for Quake Live - Add to your server's minqlx-plugins folder or upload to your QLSM instance<br>
+✅ $\color{green}{\text{[Minqlx Extended Compatible]}}$<br><br>
+[afkplus](https://github.com/D00MSDAYDEVICE/minqlx#afkpluspy-right-click--save-) ✅<br>
 [aliasesplus](https://github.com/D00MSDAYDEVICE/minqlx#aliasespluspy-right-click--save-)<br>
-[autokick](https://github.com/D00MSDAYDEVICE/minqlx/#autokickpy-right-click--save-)<br>
+[autokick](https://github.com/D00MSDAYDEVICE/minqlx/#autokickpy-right-click--save-) ✅<br>
 [backfill](https://github.com/D00MSDAYDEVICE/minqlx/#backfillpy-right-click--save-)<br>
-[backfire](https://github.com/D00MSDAYDEVICE/minqlx/#backfirepy-right-click--save-)<br>
+[backfire](https://github.com/D00MSDAYDEVICE/minqlx/#backfirepy-right-click--save-) ✅<br> 
 [factoryvote](https://github.com/D00MSDAYDEVICE/minqlx#lastmapspy-right-click--save-)<br>
 [lastmaps](https://github.com/D00MSDAYDEVICE/minqlx/#lastmapspy-right-click--save-)<br>
 [livescoreboard](https://github.com/D00MSDAYDEVICE/minqlx#livescoreboardpy-right-click--save)<br>
-[mapmanager](https://github.com/D00MSDAYDEVICE/minqlx#mapmanagerpy-right-click--save)<br>
-[motd (replacement)](https://github.com/D00MSDAYDEVICE/minqlx#motdpy-replacement-right-click--save)<br>
-[namesplus](https://github.com/D00MSDAYDEVICE/minqlx#namespluspy-replaces-namespy-right-click--save)<br>
-[votebanplus](https://github.com/D00MSDAYDEVICE/minqlx#votebanpluspy-right-click--save)<br>
+[mapmanager](https://github.com/D00MSDAYDEVICE/minqlx#mapmanagerpy-right-click--save) ✅<br> 
+[motd (replacement)](https://github.com/D00MSDAYDEVICE/minqlx#motdpy-replacement-right-click--save) ✅<br> 
+[namesplus](https://github.com/D00MSDAYDEVICE/minqlx#namespluspy-replaces-namespy-right-click--save) ✅<br> 
+[votebanplus](https://github.com/D00MSDAYDEVICE/minqlx#votebanpluspy-right-click--save) ✅<br> 
 <br>
-**QLSM:** this repository can be added in [QLSM](https://github.com/dngrtech/qlsm) under **Settings → Plugin Repositories** using `https://github.com/D00MSDAYDEVICE/minqlx`.
-`qlsm-plugins.json` gives QLSM each plugin's description, commands and an editable settings form (QLSM 1.36.0 or newer). See [Plugin Repositories](https://dngrtech.github.io/qlsm/operations/plugin-repositories/).<br>
+**QLSM:**<br>This repository can be added in [QLSM](https://github.com/dngrtech/qlsm) under **Settings → Plugin Repositories** using `https://github.com/D00MSDAYDEVICE/minqlx`.<br>
+The qlsm-plugins.json file gives QLSM each plugin's description, commands and an editable settings for (QLSM 1.36.0 or newer).<br> See [Plugin Repositories](https://dngrtech.github.io/qlsm/operations/plugin-repositories/).<br>
 <br>
 ## afkplus.py [right-click & save](https://raw.githubusercontent.com/D00MSDAYDEVICE/minqlx/refs/heads/main/afkplus.py) <br>
 This plugin expands on iouonegirl's AFK plugin found here:<br>
@@ -77,6 +77,7 @@ Damage can be set to a specific amount per hit or proportional in your server co
 > [!NOTE]
 > **Required:**<br>
 > + Shino's minqlx fork until the master is updated. This is needed for the damage hook. You can get it/compile it from [HERE](https://github.com/mgaertne/minqlx).<br>
+> + Alternatively you can run Minqlx Extended<br>
 > + A factory or server with `g_friendlyfire = 1`<br>
 
 Fixed slap damage:<br>
