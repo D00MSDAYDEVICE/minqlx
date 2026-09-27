@@ -1,11 +1,12 @@
-# This is an extension plugin for minqlx to slap/punish players that do team damage
+# This is an extension plugin for minqlx / minqlxtended to slap/punish players that do team damage
 # This works similar to a reverse vampiric effect
 # Damage can be set to a specific amount per hit or proportional in your server config
-# Essentially a team-damage deterrent system — log the incident, then reflect a portion of the damage the shooter just dealt back onto
-# themselves, non-lethally, with an audible cue.
-
-# Until the master minqlx is updated, Shino's version is required to be compiled for your server here: https://github.com/mgaertne/minqlx
-# His fork has a hook for damage
+#
+# Requires a runtime with a "damage" hook:
+#   - minqlxtended (built in): https://github.com/tjone270/minqlxtended
+#   - Shino's minqlx fork:     https://github.com/mgaertne/minqlx
+# Stock MinoMino minqlx has no damage hook; the plugin refuses to load there
+# with a clear error instead of a KeyError.
 
 # qlx_backfireSlapAmount "10"   // Fixed slap damage
 # qlx_backfireProportional "1"  // 1 = Use proportional slap damage, 0 = Use fixed damage
@@ -26,10 +27,30 @@
 # This plugin comes with no warranty or guarantee.
 
 import os
+import sys
 import time
 import threading
-import minqlx
-from minqlx import Plugin, Player
+
+# --- Runtime detection -------------------------------------------------------
+# Works on both minqlx (Shino's fork) and minqlxtended. The host runtime has
+# already imported its own package before loading plugins, so sys.modules
+# tells us which one we're inside; fall back to a plain import otherwise.
+if "minqlxtended" in sys.modules:
+    import minqlxtended as qlx
+    IS_EXTENDED = True
+elif "minqlx" in sys.modules:
+    import minqlx as qlx
+    IS_EXTENDED = False
+else:
+    try:
+        import minqlxtended as qlx
+        IS_EXTENDED = True
+    except ImportError:
+        import minqlx as qlx
+        IS_EXTENDED = False
+
+Plugin = qlx.Plugin
+Player = qlx.Player
 
 # How often the buffered log lines are flushed to disk, in seconds.
 LOG_FLUSH_INTERVAL = 5
@@ -39,12 +60,22 @@ class backfire(Plugin):
     def __init__(self):
         super().__init__()
 
+        # Stock minqlx has no damage event; fail with a readable message
+        # before registering anything.
+        if "damage" not in qlx.EVENT_DISPATCHERS:
+            raise qlx.PluginLoadError(
+                "backfire needs a 'damage' hook, which this minqlx build does not "
+                "have. Use minqlxtended or Shino's minqlx fork (mgaertne/minqlx)."
+            )
+
+        # damage is (target, attacker, damage, dflags, mod) on both Shino's
+        # fork and minqlxtended, so one handler serves both.
         self.add_hook("game_countdown", self.handle_game_countdown)
         self.add_hook("damage", self.handle_damage_event)
         self.add_hook("unload", self.handle_unload)
         self.add_command("bfv", self.cmd_bfv)
 
-        self.version = "1.2"
+        self.version = "1.3"
 
         # CVars
         self.set_cvar_once("qlx_backfireSlapAmount", "10")
@@ -87,6 +118,11 @@ class backfire(Plugin):
         if target.team != attacker.team or target.id == attacker.id:
             return
 
+        # In FFA-style modes everyone is on team "free", so the check above
+        # would treat every hit as team damage. Only punish real teammates.
+        if target.team == "free":
+            return
+
         # NOTE on g_friendlyFire interaction (verified against mgaertne's
         # hooks.c): My_G_Damage() calls the engine's G_Damage() first, then
         # calls DamageDispatcher() with the *same* local `damage` value that
@@ -127,7 +163,7 @@ class backfire(Plugin):
         with self._log_lock:
             self._log_buffer.append(log_line)
 
-    @minqlx.thread
+    @qlx.thread
     def _flush_worker(self):
         while not self._stop_event.wait(LOG_FLUSH_INTERVAL):
             self._flush_log()
@@ -142,7 +178,7 @@ class backfire(Plugin):
             with open(self.backfire_log_path, "a") as f:
                 f.writelines(lines)
         except OSError as e:
-            minqlx.log_exception(e)
+            qlx.log_exception(self)
 
     def cmd_bfv(self, player, msg, channel):
         channel.reply("^2Backfire Plugin v{}".format(self.version))
