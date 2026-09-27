@@ -1,5 +1,5 @@
 # Copyright (C) 2026 Doomsday
-# mapmanager.py — minqlx plugin for dynamic map rotation management
+# mapmanager.py — minqlx / minqlxtended plugin for dynamic map rotation management
 #
 # Replaces lastmaps.py with extended functionality:
 #   - Sequential map rotation from mappool.txt
@@ -16,9 +16,31 @@
 # https://github.com/D00MSDAYDEVICE
 # https://www.youtube.com/@HIT-CLIPS
 
-import minqlx
 import time
 import os
+import sys
+
+# --- Runtime detection -------------------------------------------------------
+# Works on both minqlx and minqlxtended. The host runtime has already imported
+# its own package before loading plugins, so sys.modules tells us which one
+# we're inside; fall back to a plain import attempt otherwise.
+if "minqlxtended" in sys.modules:
+    import minqlxtended as qlx
+    IS_EXTENDED = True
+elif "minqlx" in sys.modules:
+    import minqlx as qlx
+    IS_EXTENDED = False
+else:
+    try:
+        import minqlxtended as qlx
+        IS_EXTENDED = True
+    except ImportError:
+        import minqlx as qlx
+        IS_EXTENDED = False
+
+# minqlxtended replaced the RET_* ints with the Return enum and deliberately
+# does not export the old names.
+RET_STOP_ALL = qlx.Return.STOP_ALL if IS_EXTENDED else qlx.RET_STOP_ALL
 
 MAPPOOL_PATH = "/home/ql/qlds-27960/baseq3/mappool.txt"
 
@@ -33,9 +55,9 @@ MAPPOOL_PATH = "/home/ql/qlds-27960/baseq3/mappool.txt"
 # ---------------------------------------------------------------------------
 
 
-class mapmanager(minqlx.Plugin):
+class mapmanager(qlx.Plugin):
     def __init__(self):
-        self.version = "1.3.2"
+        self.version = "1.4.0"
 
         # ── cvars ──────────────────────────────────────────────────────────
         self.set_cvar_once("mapmanager_history_size", "5")
@@ -45,7 +67,13 @@ class mapmanager(minqlx.Plugin):
 
         # ── hooks ──────────────────────────────────────────────────────────
         self.add_hook("map",          self.on_map_load)
-        self.add_hook("game_end",     self.on_game_end)
+        # game_end is (data) on minqlx and (aborted) on minqlxtended.
+        # minqlxtended validates handler signatures at registration, so each
+        # runtime gets its own wrapper.
+        if IS_EXTENDED:
+            self.add_hook("game_end", self._ext_game_end)
+        else:
+            self.add_hook("game_end", self._legacy_game_end)
         self.add_hook("vote_called",  self.on_vote_called)
         self.add_hook("vote_ended",   self.on_vote_ended)
         self.add_hook("unload",       self.handle_unload)
@@ -68,7 +96,7 @@ class mapmanager(minqlx.Plugin):
         self.pending_vote_map = None # map name that just won a vote (may be off-pool)
         self._game_end_fired  = False
         self._vote_passed     = False  # a map vote already passed this round
-        self._unloaded        = False  # set True on plugin unload
+        self._mm_unloaded        = False  # set True on plugin unload
 
         # ── boot ───────────────────────────────────────────────────────────
         self._reload_pool()
@@ -111,7 +139,7 @@ class mapmanager(minqlx.Plugin):
                     if mapname:
                         maps.append(mapname.split()[0].lower())
         except Exception as e:
-            minqlx.log_exception()
+            qlx.log_exception(self)
             self.msg("^1[mapmanager] ^7Error reading mappool.txt: {}".format(e))
             self.pool = []
             return
@@ -185,9 +213,15 @@ class mapmanager(minqlx.Plugin):
         # record this map after 5 minutes anyway. Snapshot the map name now so a
         # stale timer can't record whatever map happens to be current when it fires.
         scheduled_map = self.current_map
-        minqlx.delay(300)(lambda m=scheduled_map: self._maybe_record_map(m))
+        qlx.delay(300)(lambda m=scheduled_map: self._maybe_record_map(m))
 
-    def on_game_end(self, data):
+    def _legacy_game_end(self, data):
+        return self.on_game_end()
+
+    def _ext_game_end(self, aborted):
+        return self.on_game_end()
+
+    def on_game_end(self):
         self._game_end_fired = True
         self._record_current_map()
 
@@ -214,7 +248,7 @@ class mapmanager(minqlx.Plugin):
                     "^1A map vote has already passed this round. "
                     "No further map votes are allowed until the next map."
                 )
-                return minqlx.RET_STOP_ALL
+                return RET_STOP_ALL
 
         # Strip |factory suffix if present (e.g. "campgrounds|ca" -> "campgrounds")
         requested = args.lower().strip().split("|")[0].strip()
@@ -228,7 +262,7 @@ class mapmanager(minqlx.Plugin):
                     self._maps_until_available(requested)
                 )
             )
-            return minqlx.RET_STOP_ALL
+            return RET_STOP_ALL
 
         # Map is allowed — let the vote proceed
         return
@@ -268,7 +302,7 @@ class mapmanager(minqlx.Plugin):
     def handle_unload(self, plugin):
         """Mark this instance dead so stale delayed callbacks become no-ops."""
         if plugin == self.__class__.__name__:
-            self._unloaded = True
+            self._mm_unloaded = True
 
     # ═══════════════════════════════════════════════════════════════════════
     # History helpers
@@ -282,7 +316,7 @@ class mapmanager(minqlx.Plugin):
           - a newer map has already loaded, replacing self.current_map, before
             this (now-irrelevant) timer fired
         """
-        if self._unloaded:
+        if self._mm_unloaded:
             return
         if self.current_map != expected_map:
             return  # a different map is now current — this timer is stale
