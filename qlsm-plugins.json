@@ -675,7 +675,7 @@
       "filename": "namesplus.py",
       "label": "Names Plus v6.2",
       "description": "Replaces names.py. Lets admins set player names (by player or Steam ID), which persist across reconnects until cleared. Unloads names.py if it's loaded, so remove \"names\" (and DEFAULT) from qlx_plugins.",
-      "runtime": "minqlxtended",][[[[[[[[[[[[][][]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]][]]]]]]]]]]]]]]]]]
+      "runtime": "minqlxtended",
       "requires_qlsm_version": "1.36.0",
       "cvars": [
         {
