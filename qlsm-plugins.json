@@ -4,7 +4,7 @@
       "filename": "afkplus.py",
       "label": "AFK Plus v1.6",
       "description": "Detects players who stop moving during a round, warns them, then moves them to spectator. Admins can skip the punishment and spectate AFK players straight away.",
-      "runtime": "minqlx",
+      "runtime": "minqlx,minqlxtended",
       "requires_qlsm_version": "1.36.0",
       "cvars": [
         {
@@ -130,7 +130,7 @@
       "filename": "autokick.py",
       "label": "Auto Kick v1.5",
       "description": "Automatically kicks players (after a warning) for using words or phrases from the word list. Colour codes are ignored when matching. Regex patterns can also go in autokick_patterns.txt, and incidents are logged to autokick.log and, by default, to the server chat log (chatlogs/chat.log).",
-      "runtime": "minqlx",
+      "runtime": "minqlx,minqlxtended",
       "requires_qlsm_version": "1.36.0",
       "cvars": [
         {
@@ -219,7 +219,7 @@
       "filename": "backfire.py",
       "label": "Backfire v1.3",
       "description": "Reflects team damage back onto the attacker (non-lethally, with a sound cue) and logs every incident. Needs g_friendlyfire 1 and a minqlx build with the damage hook (Shino's fork: github.com/mgaertne/minqlx).",
-      "runtime": "minqlx",
+      "runtime": "minqlx,minqlxtended",
       "requires_qlsm_version": "1.36.0",
       "cvars": [
         {
@@ -475,7 +475,7 @@
       "filename": "mapmanager.py",
       "label": "Map Manager v1.4",
       "description": "Manages map rotation from mappool.txt, enforces vote cooldowns on recently played maps, and tracks off-pool callvotes too. Includes the features of lastmaps.py, so don't enable both.",
-      "runtime": "minqlx",
+      "runtime": "minqlx,minqlxtended",
       "requires_qlsm_version": "1.36.0",
       "cvars": [
         {
@@ -548,7 +548,7 @@
       "filename": "motd.py",
       "label": "MOTD (multi-line)",
       "description": "Replaces the stock motd.py with a message of the day of up to 10 lines. Lines set in the config are used only while no MOTD is stored; use !clearmotd and restart to reload them.",
-      "runtime": "minqlx",
+      "runtime": "minqlx,minqlxtended",
       "requires_qlsm_version": "1.36.0",
       "cvars": [
         {
@@ -675,7 +675,7 @@
       "filename": "namesplus.py",
       "label": "Names Plus v6.2",
       "description": "Replaces names.py. Lets admins set player names (by player or Steam ID), which persist across reconnects until cleared. Unloads names.py if it's loaded, so remove \"names\" (and DEFAULT) from qlx_plugins.",
-      "runtime": "minqlx",
+      "runtime": "minqlx,minqlxtended",][[[[[[[[[[[[][][]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]][]]]]]]]]]]]]]]]]]
       "requires_qlsm_version": "1.36.0",
       "cvars": [
         {
@@ -731,7 +731,7 @@
       "filename": "votebanplus.py",
       "label": "Voteban Plus v1.0",
       "description": "Plugin for basic callvote management",
-      "runtime": "minqlx",
+      "runtime": "minqlx,minqlxtended",
       "requires_qlsm_version": "1.36.0",
       "cvars": [
         {
