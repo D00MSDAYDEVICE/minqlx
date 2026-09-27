@@ -1,6 +1,11 @@
 # Modified names.py with added ability for admins to change players names
 # Useful for those with blank names or lazy aliasing guys during tournaments :)
 
+# Updated by Doomsday - v6.2 - Dual-runtime: the same file now loads on both
+#   minqlx and minqlxtended. The runtime is detected at import, hook handlers
+#   are registered with the exact signature each runtime expects (minqlxtended
+#   refuses mismatched handlers at load), return codes are mapped to the
+#   right constants/enums, and !listnames now uses SCAN instead of KEYS.
 # Updated by Doomsday - v6.1 - Fixed NameError crash in handle_userinfo (stored_name
 #   was referenced but never defined), restored the missing game_start hook
 #   registration (handle_game_start existed but was never wired up, so
@@ -31,16 +36,43 @@
 # You should have received a copy of the GNU General Public License
 # along with minqlx. If not, see <http://www.gnu.org/licenses/>.
 
-import minqlx
 import re
 import os
+import sys
 import datetime
+
+# --- Runtime detection -------------------------------------------------------
+# The host runtime has already imported its own package before loading
+# plugins, so sys.modules tells us which one we're inside. Fall back to a
+# plain import attempt if neither is loaded yet.
+if "minqlxtended" in sys.modules:
+    import minqlxtended as qlx
+    IS_EXTENDED = True
+elif "minqlx" in sys.modules:
+    import minqlx as qlx
+    IS_EXTENDED = False
+else:
+    try:
+        import minqlxtended as qlx
+        IS_EXTENDED = True
+    except ImportError:
+        import minqlx as qlx
+        IS_EXTENDED = False
+
+# minqlxtended replaced the RET_* ints with the Return enum and deliberately
+# does not export the old names.
+if IS_EXTENDED:
+    RET_STOP_ALL = qlx.Return.STOP_ALL
+    RET_USAGE = qlx.Return.USAGE
+else:
+    RET_STOP_ALL = qlx.RET_STOP_ALL
+    RET_USAGE = qlx.RET_USAGE
 
 _re_remove_excessive_colors = re.compile(r"(?:\^.)+(\^.)")
 _name_key = "minqlx:players:{}:colored_name"
 LOG_FILE = os.path.join(os.path.dirname(__file__), "namesplus.log")
 
-VERSION = "6.1"
+VERSION = "6.2"
 
 # Name of the legacy plugin this one replaces. Both hook player_loaded/userinfo
 # to force a stored name onto the player, and both write to the same
@@ -48,15 +80,24 @@ VERSION = "6.1"
 # causes the two plugins to fight over (and corrupt) each other's state.
 _CONFLICTING_PLUGIN = "names"
 
-class namesplus(minqlx.Plugin):
+class namesplus(qlx.Plugin):
     def __init__(self):
         self._check_conflicting_plugin()
 
-        self.add_hook("player_connect", self.handle_player_connect)
+        # player_connect, userinfo and game_start have different handler
+        # signatures on each runtime. minqlxtended validates the signature at
+        # registration and refuses to load the plugin on a mismatch, so each
+        # runtime gets a thin wrapper with the exact arity it expects.
+        if IS_EXTENDED:
+            self.add_hook("player_connect", self._ext_player_connect)
+            self.add_hook("userinfo", self._ext_userinfo)
+            self.add_hook("game_start", self._ext_game_start)
+        else:
+            self.add_hook("player_connect", self._legacy_player_connect)
+            self.add_hook("userinfo", self._legacy_userinfo)
+            self.add_hook("game_start", self._legacy_game_start)
         self.add_hook("player_loaded", self.handle_player_loaded)
         self.add_hook("player_disconnect", self.handle_player_disconnect)
-        self.add_hook("userinfo", self.handle_userinfo)
-        self.add_hook("game_start", self.handle_game_start)
         self.add_command("name", self.cmd_name, usage="<name>")
         self.add_command("setname", self.cmd_setname_admin, usage="<player id> <name>", permission=4)
         self.add_command("clear", self.cmd_clear_name, usage="<player id>", permission=4)
@@ -82,19 +123,19 @@ class namesplus(minqlx.Plugin):
         there's no hook here to stop that; we can only warn that qlx_plugins
         still lists it.
         """
-        loaded = minqlx.Plugin._loaded_plugins
+        loaded = qlx.Plugin._loaded_plugins
         match = next((n for n in loaded if n.lower() == _CONFLICTING_PLUGIN), None)
 
         if match is not None:
             try:
-                minqlx.unload_plugin(match)
-                minqlx.get_logger(self).warning(
+                qlx.unload_plugin(match)
+                qlx.get_logger(self).warning(
                     "Unloaded conflicting plugin '%s' automatically before "
                     "loading namesplus.", match
                 )
             except Exception as e:
-                minqlx.log_exception(self)
-                raise minqlx.PluginLoadError(
+                qlx.log_exception(self)
+                raise qlx.PluginLoadError(
                     f"^1namesplus^7 was not loaded: found conflicting plugin "
                     f"^6{match}^7 loaded, and automatically unloading it "
                     f"failed ({e.__class__.__name__}: {e}). Unload it "
@@ -103,11 +144,36 @@ class namesplus(minqlx.Plugin):
 
         configured = {p.lower() for p in (self.get_cvar("qlx_plugins", set) or set())}
         if _CONFLICTING_PLUGIN in configured:
-            minqlx.get_logger(self).warning(
+            qlx.get_logger(self).warning(
                 "qlx_plugins still lists 'names', which conflicts with "
                 "namesplus. Remove it from the config so it isn't loaded "
                 "again on next restart."
             )
+
+    # --- Runtime-specific hook wrappers -----------------------------------
+
+    # minqlx: player_connect(player), userinfo(player, changed), game_start(data)
+    def _legacy_player_connect(self, player):
+        return self.handle_player_connect(player)
+
+    def _legacy_userinfo(self, player, changed):
+        return self.handle_userinfo(player, changed)
+
+    def _legacy_game_start(self, data):
+        return self.handle_game_start()
+
+    # minqlxtended: player_connect(player, is_bot),
+    # userinfo(player, changed, infostring), game_start()
+    def _ext_player_connect(self, player, is_bot):
+        return self.handle_player_connect(player)
+
+    def _ext_userinfo(self, player, changed, infostring):
+        return self.handle_userinfo(player, changed)
+
+    def _ext_game_start(self):
+        return self.handle_game_start()
+
+    # --- Shared logic ------------------------------------------------------
 
     def handle_player_connect(self, player):
         self.steam_names[player.steam_id] = player.clean_name
@@ -124,7 +190,7 @@ class namesplus(minqlx.Plugin):
     def handle_player_disconnect(self, player, reason):
         self.steam_names.pop(player.steam_id, None)
 
-    def handle_game_start(self, data):
+    def handle_game_start(self):
         if not self.get_cvar("qlx_enforceAdminName", bool):
             return
 
@@ -179,12 +245,12 @@ class namesplus(minqlx.Plugin):
             if name_key in self.db:
                 del self.db[name_key]
                 player.tell("Your registered name has been removed.")
-                return minqlx.RET_STOP_ALL
-            return minqlx.RET_USAGE
+                return RET_STOP_ALL
+            return RET_USAGE
 
         name = self.clean_excessive_colors(" ".join(msg[1:])).strip()
         if not self.validate_name(player, name):
-            return minqlx.RET_STOP_ALL
+            return RET_STOP_ALL
 
         name = "^7" + name
         self.name_set = True
@@ -192,11 +258,11 @@ class namesplus(minqlx.Plugin):
         self.db[name_key] = name
         player.tell("The name has been registered. To remove it, use ^6!name^7 with no arguments.")
         self.log_debug(f"Player {player.id} set their name to: {name}")
-        return minqlx.RET_STOP_ALL
+        return RET_STOP_ALL
 
     def cmd_setname_admin(self, player, msg, channel):
         if len(msg) < 3:
-            return minqlx.RET_USAGE
+            return RET_USAGE
 
         target_id = msg[1]
     
@@ -206,14 +272,14 @@ class namesplus(minqlx.Plugin):
                 steam_id = target.steam_id if target else int(target_id)  # Use Steam ID if offline
             else:
                 player.tell("Invalid ID format. Use a Player ID or Steam ID.")
-                return minqlx.RET_STOP_ALL
+                return RET_STOP_ALL
         except Exception:
             player.tell("Player not found or invalid ID.")
-            return minqlx.RET_STOP_ALL
+            return RET_STOP_ALL
 
         name = self.clean_excessive_colors(" ".join(msg[2:])).strip()
         if not self.validate_name(player, name, admin_override=True):
-            return minqlx.RET_STOP_ALL
+            return RET_STOP_ALL
 
         name = "^7" + name
         self.db[_name_key.format(steam_id)] = name  # Store name in Redis using Steam ID
@@ -226,11 +292,11 @@ class namesplus(minqlx.Plugin):
         player.tell(f"Set name for Steam ID {steam_id} to: {name}")
         self.log_debug(f"Admin {player.id} set name for Steam ID {steam_id} to: {name}")
 
-        return minqlx.RET_STOP_ALL
+        return RET_STOP_ALL
 
     def cmd_clear_name(self, player, msg, channel):
         if len(msg) != 2:
-            return minqlx.RET_USAGE
+            return RET_USAGE
 
         target_id = msg[1]
 
@@ -240,10 +306,10 @@ class namesplus(minqlx.Plugin):
                 steam_id = target.steam_id if target else int(target_id)  # Use Steam ID if offline
             else:
                 player.tell("Invalid ID format. Use a Player ID or Steam ID.")
-                return minqlx.RET_STOP_ALL
+                return RET_STOP_ALL
         except Exception:
             player.tell("Player not found or invalid ID.")
-            return minqlx.RET_STOP_ALL
+            return RET_STOP_ALL
 
         name_key = _name_key.format(steam_id)
 
@@ -256,7 +322,7 @@ class namesplus(minqlx.Plugin):
         else:
             player.tell("No custom name to clear.")
 
-        return minqlx.RET_STOP_ALL
+        return RET_STOP_ALL
 
     def cmd_version(self, player, msg, channel):
         player.tell(f"^3Namesplus version: ^7{VERSION}")
@@ -280,12 +346,13 @@ class namesplus(minqlx.Plugin):
         player.tell(f"^3Enforced names for {enforced_count} players.")
         self.log_debug(f"Admin {player.id} enforced {enforced_count} player names.")
 
-        return minqlx.RET_STOP_ALL
+        return RET_STOP_ALL
     
     def cmd_list_names(self, player, msg, channel):
         admin_names = []
     
-        for key in self.db.keys("minqlx:players:*:colored_name"):  # Get all stored names
+        # SCAN rather than KEYS: KEYS blocks Redis for the whole keyspace walk.
+        for key in self.db.scan_iter(match="minqlx:players:*:colored_name"):
             steam_id = key.split(":")[2]  # Extract Steam ID from key format
             name = self.db[key]
             
@@ -297,7 +364,7 @@ class namesplus(minqlx.Plugin):
         else:
             player.tell("^3Admin-set names:^7\n" + "\n".join(admin_names))
 
-        return minqlx.RET_STOP_ALL
+        return RET_STOP_ALL
 
     def clean_excessive_colors(self, name):
         def sub_func(match):
@@ -330,5 +397,5 @@ class namesplus(minqlx.Plugin):
             with open(LOG_FILE, "a") as f:
                 f.write(log_entry)
         except Exception as e:
-            self.logger.warning(f"Failed to write to log file: {e}")
+            qlx.get_logger(self).warning(f"Failed to write to log file: {e}")
 
