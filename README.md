@@ -10,7 +10,7 @@ Collection of plugins for Quake Live - Add to your server's minqlx-plugins folde
 [lastmaps](https://github.com/D00MSDAYDEVICE/minqlx/#lastmapspy-right-click--save-)<br>
 [livescoreboard](https://github.com/D00MSDAYDEVICE/minqlx#livescoreboardpy-right-click--save)<br>
 [mapmanager](https://github.com/D00MSDAYDEVICE/minqlx#mapmanagerpy-right-click--save) ✅<br> 
-[motd (replacement)](https://github.com/D00MSDAYDEVICE/minqlx#motdpy-replacement-right-click--save) ✅<br> 
+[motdplus (motd replacement)](https://github.com/D00MSDAYDEVICE/minqlx#motdpy-replacement-right-click--save) ✅<br> 
 [namesplus](https://github.com/D00MSDAYDEVICE/minqlx#namespluspy-replaces-namespy-right-click--save) ✅<br> 
 [votebanplus](https://github.com/D00MSDAYDEVICE/minqlx#votebanpluspy-right-click--save) ✅<br> 
 <br>
@@ -173,7 +173,7 @@ Manages map rotation, enforces cooldowns on recently played maps, and tracks off
 `manager_allownewvotes` "1"  - Allow callvote map after a vote already passed this round, 0 = block it<br>
 
 
-## motd.py (replacement) [right-click & save](https://raw.githubusercontent.com/D00MSDAYDEVICE/minqlx/refs/heads/main/motd.py)<br>
+## motdplus.py (replacement for motd) [right-click & save](https://raw.githubusercontent.com/D00MSDAYDEVICE/minqlx/refs/heads/main/motd.py)<br>
 Extended motd to multiple lines to overcome character length and format limitations/ease of use<br>
 <br>
 **Commands:**<br>
