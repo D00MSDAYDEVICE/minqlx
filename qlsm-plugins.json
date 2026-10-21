@@ -128,8 +128,8 @@
     },
     {
       "filename": "autokick.py",
-      "label": "Auto Kick v1.5",
-      "description": "Automatically kicks players (after a warning) for using words or phrases from the word list. Colour codes are ignored when matching. Regex patterns can also go in autokick_patterns.txt, and incidents are logged to autokick.log and, by default, to the server chat log (chatlogs/chat.log).",
+      "label": "Auto Kick v1.6",
+      "description": "Automatically kicks players (after a warning) for using words or phrases from the word list. Colour codes are ignored when matching. Regex patterns can also go in autokick_patterns.txt, and incidents are logged to autokick.log and, by default, to the server chat log (chatlogs/chat.log). This plugin will also reject names on connect.",
       "runtime": "minqlxtended",
       "requires_qlsm_version": "1.36.0",
       "cvars": [
