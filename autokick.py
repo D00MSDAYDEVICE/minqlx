@@ -2,7 +2,10 @@
 # https://github.com/D00MSDAYDEVICE
 # https://www.youtube.com/@HIT-CLIPS
 
-# This is an extension plugin for minqlx to autokick players based on chat
+# This is an extension plugin for minqlx to autokick players based on chat.
+# It also rejects connecting players whose nickname matches a regex in
+# autokick_patterns.txt (colour codes ignored, applies to everyone, regardless
+# of mode or warnings).
 # CVARS:
 # qlx_autokickWarnings "1" - offence that triggers the kick (kick/silent modes)
 #                            (1 = kick on first offence, 3 = warn twice, kick on third)
@@ -40,13 +43,15 @@ from datetime import datetime
 COLOR_CODE = re.compile(r"\^[0-9]")
 LIST_WORDS_LIMIT = 50
 LIST_PATTERNS_LIMIT = 20
+NICKNAME_REJECTION = "Please change your nickname: inappropriate language."
 
 class autokick(minqlx.Plugin):
     def __init__(self):
-        self.version = "1.5"
+        self.version = "1.6"
         self.add_command("akv", self.cmd_version, 0)
 
         # Hooks
+        self.add_hook("player_connect", self.handle_player_connect)
         self.add_hook("chat", self.handle_chat)
         self.add_hook("map", self.handle_map_change)
 
@@ -175,6 +180,17 @@ class autokick(minqlx.Plugin):
     # ------------------------------------------------------------
     # Event Hooks
     # ------------------------------------------------------------
+
+    def handle_player_connect(self, player):
+        # player_connect is synchronous: returning a string rejects admission.
+        # The client has not finished connecting, so don't kick or tell it.
+        name = COLOR_CODE.sub("", player.name)
+        for pattern in self.regex_patterns:
+            if pattern.search(name):
+                # repr keeps player-controlled newlines out of the log.
+                self.event(f"[REJECT-NAME] {name!r} ({player.steam_id}) "
+                           f"matched regex {pattern.pattern!r}")
+                return NICKNAME_REJECTION
 
     def handle_map_change(self, mapname, factory):
         self.warnings.clear()
