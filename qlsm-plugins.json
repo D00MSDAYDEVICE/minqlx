@@ -307,6 +307,102 @@
       ]
     },
     {
+      "filename": "fragdex.py",
+      "label": "Fragdex v1.0.0",
+      "description": "Sends every player connection and name change to a Fragdex player database, and warns admins in game when a tagged or banned player, or someone linked to one, joins. Works on minqlx and minqlxtended: pick the runtime when downloading. Needs a Fragdex API key with Add records access.",
+      "requires_qlsm_version": "1.36.0",
+      "cvars": [
+        {
+          "cvar": "qlx_fragdexUrl",
+          "default": "",
+          "description": "Fragdex server address, e.g. https://fragdex.example.com. A URL set with !fragdex url takes precedence.",
+          "label": "Fragdex address",
+          "type": "string"
+        },
+        {
+          "cvar": "qlx_fragdexKey",
+          "default": "",
+          "description": "Fragdex API key (fdx_...). A key set with !fragdex key from the console takes precedence.",
+          "label": "API key",
+          "type": "string"
+        },
+        {
+          "cvar": "qlx_fragdexServerName",
+          "default": "",
+          "description": "Name stored with each record. Empty: sv_hostname.",
+          "label": "Server name",
+          "type": "string"
+        },
+        {
+          "cvar": "qlx_fragdexRecord",
+          "default": true,
+          "description": "Send player connections and name changes to Fragdex.",
+          "label": "Send connections",
+          "type": "bool"
+        },
+        {
+          "cvar": "qlx_fragdexJoinAlerts",
+          "default": true,
+          "description": "Check joining players and warn admins about tagged or banned players.",
+          "label": "Join warnings",
+          "type": "bool"
+        },
+        {
+          "cvar": "qlx_fragdexAlertTags",
+          "default": "cheater,banned",
+          "description": "Tags that trigger a warning, comma separated, case-insensitive. * means any tag.",
+          "label": "Warning tags",
+          "type": "string"
+        },
+        {
+          "cvar": "qlx_fragdexAlertBans",
+          "default": true,
+          "description": "Also warn about players with VAC or game bans.",
+          "label": "Warn about Steam bans",
+          "type": "bool"
+        },
+        {
+          "cvar": "qlx_fragdexAlertPermission",
+          "default": 2,
+          "description": "Permission level that receives join warnings.",
+          "label": "Warning permission level",
+          "min": 0,
+          "type": "number"
+        },
+        {
+          "cvar": "qlx_fragdexPermission",
+          "default": 5,
+          "description": "Permission level for !fragdex and !fragdex check. url, key and test always need 5.",
+          "label": "Command permission level",
+          "min": 0,
+          "type": "number"
+        },
+        {
+          "cvar": "qlx_fragdexInterval",
+          "default": 15,
+          "description": "Seconds between uploads to Fragdex.",
+          "label": "Upload interval (seconds)",
+          "min": 5,
+          "type": "number"
+        },
+        {
+          "cvar": "qlx_fragdexVerifyTls",
+          "default": true,
+          "description": "Off accepts a self-signed certificate on the Fragdex server.",
+          "label": "Verify HTTPS certificate",
+          "type": "bool"
+        }
+      ],
+      "commands": [
+        {
+          "description": "Status, or set up and test the connection to Fragdex (url, key and test need permission 5; key only from the server console or rcon), or look up a player by client id or SteamID64.",
+          "name": "fragdex",
+          "permission": 5,
+          "usage": "[url <address> | key <key> | test | check <player id or steam id>]"
+        }
+      ]
+    },
+    {
       "filename": "lastmaps.py",
       "label": "Last Maps v1.2.3",
       "description": "Shows the last 5 played maps. Useful to avoid voting overplayed maps.",

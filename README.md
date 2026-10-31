@@ -7,6 +7,7 @@ Collection of plugins for Quake Live - Add to your server's minqlx-plugins folde
 [backfill](https://github.com/D00MSDAYDEVICE/minqlx/#backfillpy-right-click--save-)<br>
 [backfire](https://github.com/D00MSDAYDEVICE/minqlx/#backfirepy-right-click--save-) ✅<br> 
 [factoryvote](https://github.com/D00MSDAYDEVICE/minqlx#lastmapspy-right-click--save-)<br>
+[fragdex](https://github.com/D00MSDAYDEVICE/minqlx#fragdexpy-right-click--save-) ✅<br>
 [lastmaps](https://github.com/D00MSDAYDEVICE/minqlx/#lastmapspy-right-click--save-)<br>
 [livescoreboard](https://github.com/D00MSDAYDEVICE/minqlx#livescoreboardpy-right-click--save)<br>
 [mapmanager](https://github.com/D00MSDAYDEVICE/minqlx#mapmanagerpy-right-click--save) ✅<br> 
@@ -118,6 +119,42 @@ PER-FACTORY CONFIG SUPPORT:<br>
 
 If the file exists, it is executed as a server console command before the map change/factory update.<br>
 This is useful for updating things like sv_mappoolfile to change the rotating maps for that mode.
+
+## fragdex.py [right-click & save](https://raw.githubusercontent.com/D00MSDAYDEVICE/minqlx/refs/heads/main/fragdex.py) <br>
+Connects your server to a [Fragdex](https://github.com/D00MSDAYDEVICE/fragdex) player database (names, aliases, Steam IDs, IPs, tags, linked accounts).<br>
+Works on both minqlx and Minqlx Extended. Full documentation: [minqlx plugin](https://d00msdaydevice.github.io/fragdex/integrations/minqlx-plugin/)<br>
+<br>
+● Sends every player connection and name change to Fragdex as it happens, in batches from a background thread<br>
+● Warns admins in game when a player joins who is tagged (cheater, banned), has VAC or game bans, or is linked to such an account<br>
+● Looks up players in game<br>
+<br>
+> [!NOTE]
+> Needs a Fragdex API key with **Add records** access: in Fragdex, **Settings → Fragdex API → Create key**.<br>
+> Set the key from the server console or rcon, never in chat: `qlx !fragdex key fdx_...`<br>
+
+**Setup** (server console or rcon):<br>
+`qlx !fragdex url https://fragdex.example.com`<br>
+`qlx !fragdex key fdx_...`<br>
+`qlx !fragdex test`<br>
+
+**Commands:**<br>
+**!fragdex** - Status: server, key, records waiting, last upload<br>
+**!fragdex url** `<address>` - Set the Fragdex server (permission 5)<br>
+**!fragdex key** `<key>` - Set the API key (permission 5, console/rcon only)<br>
+**!fragdex test** - Check the connection and the key (permission 5)<br>
+**!fragdex check** `<player ID #>` OR `<steam ID #>` - Look up a player: last seen, tags, bans, linked accounts<br>
+
+**CVARS:**<br>
+`qlx_fragdexUrl` / `qlx_fragdexKey` - Fragdex address and API key, if not set with the commands<br>
+`qlx_fragdexServerName` - Name stored with each record (default: sv_hostname)<br>
+`qlx_fragdexRecord 1` - 0 stops sending connections<br>
+`qlx_fragdexJoinAlerts 1` - 0 stops join warnings<br>
+`qlx_fragdexAlertTags "cheater,banned"` - Tags that trigger a warning (* = any tag)<br>
+`qlx_fragdexAlertBans 1` - 0 ignores VAC and game bans<br>
+`qlx_fragdexAlertPermission 2` - Permission level that receives join warnings<br>
+`qlx_fragdexPermission 5` - Permission level for !fragdex and !fragdex check<br>
+`qlx_fragdexInterval 15` - Seconds between uploads<br>
+`qlx_fragdexVerifyTls 1` - 0 accepts a self-signed certificate<br>
 
 ## lastmaps.py [right-click & save](https://raw.githubusercontent.com/D00MSDAYDEVICE/minqlx/refs/heads/main/lastmaps.py) <br>
 Shows a lists of the last 5 played maps<br>
