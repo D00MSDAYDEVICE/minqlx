@@ -8,6 +8,7 @@ Collection of plugins for Quake Live - Add to your server's minqlx-plugins folde
 [backfire](https://github.com/D00MSDAYDEVICE/minqlx/#backfirepy-right-click--save-) ✅<br> 
 [factoryvote](https://github.com/D00MSDAYDEVICE/minqlx#lastmapspy-right-click--save-)<br>
 [fragdex](https://github.com/D00MSDAYDEVICE/minqlx#fragdexpy-right-click--save-) ✅<br>
+[fragq](https://github.com/D00MSDAYDEVICE/minqlx#fragqpy-right-click--save-) ✅<br>
 [lastmaps](https://github.com/D00MSDAYDEVICE/minqlx/#lastmapspy-right-click--save-)<br>
 [livescoreboard](https://github.com/D00MSDAYDEVICE/minqlx#livescoreboardpy-right-click--save)<br>
 [mapmanager](https://github.com/D00MSDAYDEVICE/minqlx#mapmanagerpy-right-click--save) ✅<br> 
@@ -155,6 +156,46 @@ Works on both minqlx and Minqlx Extended. Full documentation: [minqlx plugin](ht
 `qlx_fragdexPermission 5` - Permission level for !fragdex and !fragdex check<br>
 `qlx_fragdexInterval 15` - Seconds between uploads<br>
 `qlx_fragdexVerifyTls 1` - 0 accepts a self-signed certificate<br>
+
+## fragq.py [right-click & save](https://raw.githubusercontent.com/D00MSDAYDEVICE/minqlx/refs/heads/main/fragq.py) <br>
+Connects your server to [FragQ](https://github.com/D00MSDAYDEVICE/fragq), the Discord pickup game bot. FragQ connectors are in beta.<br>
+Works on both minqlx and Minqlx Extended. Full documentation: [Quake Live (minqlx)](https://d00msdaydevice.github.io/fragq/connectors/quake-live/)<br>
+<br>
+● Sends each match's results to FragQ when it ends, which posts them in the pickup queue's Discord channel<br>
+● Highlights: Top Damage, Least Damage, Most Damage Taken, Most Frags, Highest Accuracy and Quitters, plus a stats table per team<br>
+● Players link their Steam account to Discord from the game with !link, confirmed in a Discord direct message<br>
+● Optionally keeps players without a linked Steam account in spectator<br>
+<br>
+> [!NOTE]
+> Needs a FragQ connector key: in the FragQ web panel, **Connectors → Create connector**, game **Quake Live**.<br>
+> Set the key from the server console or rcon, never in chat: `qlx !fragq key fq_...`<br>
+> On minqlx, match stats need `zmq_stats_enable 1`.<br>
+
+**Setup** (server console or rcon):<br>
+`qlx !fragq url https://fragq.example.com`<br>
+`qlx !fragq key fq_...`<br>
+`qlx !fragq test`<br>
+
+**Commands:**<br>
+**!link** `<discord id>` - Link your Steam account to your Discord account (confirm in Discord)<br>
+**!link** `<player ID #>` `<discord id>` - Link another player's account (qlx_fragqAdminLevel)<br>
+**!linkenforce** `[on|off]` - Keep players without a linked Steam account in spectator (qlx_fragqAdminLevel)<br>
+**!setdiscord** `<invite URL>` - Discord invite shown to players who aren't on the server yet; `off` removes it (qlx_fragqAdminLevel)<br>
+**!fragq** - Status: address, key, last result sent (qlx_fragqAdminLevel)<br>
+**!fragq url** `<address>` - Set the FragQ address (permission 5)<br>
+**!fragq key** `<key>` - Set the connector key (permission 5, console/rcon only)<br>
+**!fragq test** - Check the connection and the key (permission 5)<br>
+
+**CVARS:**<br>
+`qlx_fragqUrl` / `qlx_fragqKey` - FragQ address and connector key, if not set with the commands<br>
+`qlx_fragqServerName` - Server name shown with results (default: sv_hostname)<br>
+`qlx_fragqResults 1` - 0 stops sending match results<br>
+`qlx_fragqMinPlayers 2` - Fewest players a match needs for its results to be sent<br>
+`qlx_fragqMinShots 50` - Fewest shots for Highest Accuracy<br>
+`qlx_fragqEnforceLink 0` - Start value for !linkenforce before it is first used<br>
+`qlx_fragqDiscordInvite ""` - Start value for !setdiscord before it is first used<br>
+`qlx_fragqAdminLevel 3` - Permission level for !linkenforce, !setdiscord, !fragq and linking others<br>
+`qlx_fragqVerifyTls 1` - 0 accepts a self-signed certificate<br>
 
 ## lastmaps.py [right-click & save](https://raw.githubusercontent.com/D00MSDAYDEVICE/minqlx/refs/heads/main/lastmaps.py) <br>
 Shows a lists of the last 5 played maps<br>

@@ -403,6 +403,113 @@
       ]
     },
     {
+      "filename": "fragq.py",
+      "label": "FragQ v1.0.0",
+      "description": "Sends each match's results (Top Damage, Least Damage, Most Damage Taken, Most Frags, Highest Accuracy, Quitters and a stats table) to FragQ, the Discord pickup game bot, which posts them in the queue's channel. Players can link their Steam account to Discord with !link, and !linkenforce keeps unlinked players in spectator. Works on minqlx and minqlxtended: pick the runtime when downloading. Needs a FragQ connector key (beta). On minqlx, set zmq_stats_enable 1.",
+      "requires_qlsm_version": "1.36.0",
+      "cvars": [
+        {
+          "cvar": "qlx_fragqUrl",
+          "default": "",
+          "description": "FragQ web panel address, e.g. https://fragq.example.com. An address set with !fragq url takes precedence.",
+          "label": "FragQ address",
+          "type": "string"
+        },
+        {
+          "cvar": "qlx_fragqKey",
+          "default": "",
+          "description": "FragQ connector key (fq_...). A key set with !fragq key from the console takes precedence.",
+          "label": "Connector key",
+          "type": "string"
+        },
+        {
+          "cvar": "qlx_fragqServerName",
+          "default": "",
+          "description": "Server name shown with results. Empty: sv_hostname.",
+          "label": "Server name",
+          "type": "string"
+        },
+        {
+          "cvar": "qlx_fragqResults",
+          "default": true,
+          "description": "Send each match's results to FragQ when it ends.",
+          "label": "Send match results",
+          "type": "bool"
+        },
+        {
+          "cvar": "qlx_fragqMinPlayers",
+          "default": 2,
+          "description": "Fewest players a match needs for its results to be sent.",
+          "label": "Minimum players",
+          "min": 1,
+          "type": "number"
+        },
+        {
+          "cvar": "qlx_fragqMinShots",
+          "default": 50,
+          "description": "Fewest shots a player needs to win Highest Accuracy.",
+          "label": "Minimum shots for accuracy",
+          "min": 1,
+          "type": "number"
+        },
+        {
+          "cvar": "qlx_fragqEnforceLink",
+          "default": false,
+          "description": "Start value for !linkenforce: keep players without a linked Steam account in spectator. Once !linkenforce is used, its setting is kept in the database.",
+          "label": "Require linked Steam accounts",
+          "type": "bool"
+        },
+        {
+          "cvar": "qlx_fragqDiscordInvite",
+          "default": "",
+          "description": "Discord invite link shown to players who aren't on the Discord server yet, e.g. https://discord.gg/abc123. Once !setdiscord is used, its setting is kept in the database.",
+          "label": "Discord invite",
+          "type": "string"
+        },
+        {
+          "cvar": "qlx_fragqAdminLevel",
+          "default": 3,
+          "description": "Permission level for !linkenforce, !setdiscord, !fragq and linking other players. url, key and test always need 5.",
+          "label": "Admin permission level",
+          "min": 0,
+          "type": "number"
+        },
+        {
+          "cvar": "qlx_fragqVerifyTls",
+          "default": true,
+          "description": "Off accepts a self-signed certificate on the FragQ server.",
+          "label": "Verify HTTPS certificate",
+          "type": "bool"
+        }
+      ],
+      "commands": [
+        {
+          "description": "Link your Steam account to your Discord account; FragQ asks you to confirm in a Discord direct message. Admins can link another player by client id.",
+          "name": "link",
+          "permission": 0,
+          "usage": "<discord id> | <player id> <discord id>"
+        },
+        {
+          "description": "Keep players without a linked Steam account in spectator. Without an argument, switches on or off.",
+          "name": "linkenforce",
+          "permission": 3,
+          "usage": "[on|off]"
+        },
+        {
+          "description": "Set the Discord invite shown to players who aren't on the Discord server yet; off removes it.",
+          "name": "setdiscord",
+          "permission": 3,
+          "usage": "<invite URL> | off"
+        },
+        {
+          "description": "Status, or set up and test the connection to FragQ (url, key and test need permission 5; key only from the server console or rcon).",
+          "name": "fragq",
+          "permission": 3,
+          "usage": "[url <address> | key <key> | test]"
+        }
+      ]
+    },
+    {
       "filename": "lastmaps.py",
       "label": "Last Maps v1.2.3",
       "description": "Shows the last 5 played maps. Useful to avoid voting overplayed maps.",
