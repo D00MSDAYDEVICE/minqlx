@@ -165,11 +165,13 @@ Works on both minqlx and Minqlx Extended. Full documentation: [Quake Live (minql
 ● Highlights: Top Damage, Least Damage, Most Damage Taken, Most Frags, Highest Accuracy and Quitters, plus a stats table per team<br>
 ● Players link their Steam account to Discord from the game with !link, confirmed in a Discord direct message<br>
 ● Optionally keeps players without a linked Steam account in spectator<br>
+● Voice moves: FragQ moves players between the queue's Discord voice channels at match start, after team changes and when the match ends or is aborted<br>
+● Admins can move players by hand with !voice, for teams arranged in the game<br>
 <br>
 > [!NOTE]
 > Needs a FragQ connector key: in the FragQ web panel, **Connectors → Create connector**, game **Quake Live**.<br>
 > Set the key from the server console or rcon, never in chat: `qlx !fragq key fq_...`<br>
-> On minqlx, match stats need `zmq_stats_enable 1`.<br>
+> Match results need `zmq_stats_enable 1`, on minqlx and minqlxtended alike.<br>
 
 **Setup** (server console or rcon):<br>
 `qlx !fragq url https://fragq.example.com`<br>
@@ -181,6 +183,8 @@ Works on both minqlx and Minqlx Extended. Full documentation: [Quake Live (minql
 **!link** `<player ID #>` `<discord id>` - Link another player's account (qlx_fragqAdminLevel)<br>
 **!linkenforce** `[on|off]` - Keep players without a linked Steam account in spectator (qlx_fragqAdminLevel)<br>
 **!setdiscord** `<invite URL>` - Discord invite shown to players who aren't on the server yet; `off` removes it (qlx_fragqAdminLevel)<br>
+**!voice** `teams` / `lobby` - Move everyone to their team's voice channel now, or back to the lobby (qlx_voicemoveperm)<br>
+**!voice** `<player ID #>` `red|blue|lobby` - Move one player (qlx_voicemoveperm)<br>
 **!fragq** - Status: address, key, last result sent (qlx_fragqAdminLevel)<br>
 **!fragq url** `<address>` - Set the FragQ address (permission 5)<br>
 **!fragq key** `<key>` - Set the connector key (permission 5, console/rcon only)<br>
@@ -196,6 +200,8 @@ Works on both minqlx and Minqlx Extended. Full documentation: [Quake Live (minql
 `qlx_fragqDiscordInvite ""` - Start value for !setdiscord before it is first used<br>
 `qlx_fragqAdminLevel 3` - Permission level for !linkenforce, !setdiscord, !fragq and linking others<br>
 `qlx_fragqVerifyTls 1` - 0 accepts a self-signed certificate<br>
+`qlx_fragqVoice 0` - 1 moves players between the queue's Discord voice channels (voice moves on in FragQ, key allowed to move players in voice)<br>
+`qlx_voicemoveperm 4` - Permission level for !voice<br>
 
 ## lastmaps.py [right-click & save](https://raw.githubusercontent.com/D00MSDAYDEVICE/minqlx/refs/heads/main/lastmaps.py) <br>
 Shows a lists of the last 5 played maps<br>

@@ -404,8 +404,8 @@
     },
     {
       "filename": "fragq.py",
-      "label": "FragQ v1.0.0",
-      "description": "Sends each match's results (Top Damage, Least Damage, Most Damage Taken, Most Frags, Highest Accuracy, Quitters and a stats table) to FragQ, the Discord pickup game bot, which posts them in the queue's channel. Players can link their Steam account to Discord with !link, and !linkenforce keeps unlinked players in spectator. Works on minqlx and minqlxtended: pick the runtime when downloading. Needs a FragQ connector key (beta). On minqlx, set zmq_stats_enable 1.",
+      "label": "FragQ v1.2.0",
+      "description": "Sends each match's results (Top Damage, Least Damage, Most Damage Taken, Most Frags, Highest Accuracy, Quitters and a stats table) to FragQ, the Discord pickup game bot, which posts them in the queue's channel. Players can link their Steam account to Discord with !link, and !linkenforce keeps unlinked players in spectator. With voice moves, FragQ moves players between the queue's Discord voice channels at match start, after team changes and when the match ends or is aborted, and admins can move players by hand with !voice. Works on minqlx and minqlxtended: pick the runtime when downloading. Needs a FragQ connector key (beta). Match results need zmq_stats_enable 1 on both runtimes.",
       "requires_qlsm_version": "1.36.0",
       "cvars": [
         {
@@ -480,6 +480,21 @@
           "description": "Off accepts a self-signed certificate on the FragQ server.",
           "label": "Verify HTTPS certificate",
           "type": "bool"
+        },
+        {
+          "cvar": "qlx_fragqVoice",
+          "default": false,
+          "description": "Tell FragQ the teams at match start and after team changes, and send everyone back to the lobby when the match ends or is aborted. Needs voice moves on for the queue and a key allowed to move players in voice.",
+          "label": "Voice moves",
+          "type": "bool"
+        },
+        {
+          "cvar": "qlx_voicemoveperm",
+          "default": 4,
+          "description": "Permission level for !voice, which moves players by hand (works with voice moves off too).",
+          "label": "!voice permission level",
+          "min": 0,
+          "type": "number"
         }
       ],
       "commands": [
@@ -500,6 +515,12 @@
           "name": "setdiscord",
           "permission": 3,
           "usage": "<invite URL> | off"
+        },
+        {
+          "description": "Move players between the queue's Discord voice channels now: everyone to their team's channel, everyone back to the lobby, or one player. Add a queue name at the end if the key has several queues.",
+          "name": "voice",
+          "permission": 4,
+          "usage": "teams | lobby | <player id> red|blue|lobby [queue]"
         },
         {
           "description": "Status, or set up and test the connection to FragQ (url, key and test need permission 5; key only from the server console or rcon).",
