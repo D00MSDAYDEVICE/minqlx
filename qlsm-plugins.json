@@ -404,7 +404,7 @@
     },
     {
       "filename": "fragq.py",
-      "label": "FragQ v1.2.0",
+      "label": "FragQ v1.2.1",
       "description": "Sends each match's results (Top Damage, Least Damage, Most Damage Taken, Most Frags, Highest Accuracy, Quitters and a stats table) to FragQ, the Discord pickup game bot, which posts them in the queue's channel. Players can link their Steam account to Discord with !link, and !linkenforce keeps unlinked players in spectator. With voice moves, FragQ moves players between the queue's Discord voice channels at match start, after team changes and when the match ends or is aborted, and admins can move players by hand with !voice. Works on minqlx and minqlxtended: pick the runtime when downloading. Needs a FragQ connector key (beta). Match results need zmq_stats_enable 1 on both runtimes.",
       "requires_qlsm_version": "1.36.0",
       "cvars": [

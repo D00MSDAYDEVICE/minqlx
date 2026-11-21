@@ -76,7 +76,7 @@ except ImportError:
     STOP_ALL = ql.RET_STOP_ALL
     RUNTIME = "minqlx"
 
-VERSION = "1.2.0"
+VERSION = "1.2.1"
 DB_URL = "minqlx:fragq:url"
 DB_KEY = "minqlx:fragq:key"
 DB_ENFORCE = "minqlx:fragq:enforce"
@@ -119,7 +119,10 @@ def _api_url(url):
     parts = urllib.parse.urlsplit(url)
     if parts.scheme not in ("http", "https") or not parts.netloc or parts.query or parts.fragment:
         return None
-    return url if url.endswith("/api/connect/v1") else url + "/api/connect/v1"
+    # anything from /api on (/api, /api/v1, a pasted .../api/connect/v1/status) is dropped: the connector API is
+    # always <panel address>/api/connect/v1, and a doubled /api/... path is answered "Not logged in."
+    path = re.sub(r"/api(/.*)?\Z", "", parts.path.rstrip("/"), flags=re.IGNORECASE)
+    return f"{parts.scheme}://{parts.netloc}{path}/api/connect/v1"
 
 
 def _text(s):
