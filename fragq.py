@@ -53,6 +53,9 @@ Cvars:
     qlx_fragqVerifyTls      0 = accept a self-signed certificate (default 1)
     qlx_fragqVoice          1 = move players between the queue's Discord voice channels (default 0)
     qlx_voicemoveperm       permission level for !voice (default 4)
+    qlx_fragqQueue          the FragQ queue this server plays (default empty: FragQ works it out from the
+                            key's queues). Sent with every voice request and result; a queue name typed after
+                            !voice takes precedence. Not case-sensitive.
 """
 import collections
 import json
@@ -76,7 +79,7 @@ except ImportError:
     STOP_ALL = ql.RET_STOP_ALL
     RUNTIME = "minqlx"
 
-VERSION = "1.2.1"
+VERSION = "1.3.0"
 DB_URL = "minqlx:fragq:url"
 DB_KEY = "minqlx:fragq:key"
 DB_ENFORCE = "minqlx:fragq:enforce"
@@ -152,6 +155,13 @@ def _team(team):
     return str(getattr(team, "name", team) or "").lower()
 
 
+def _with_queue(payload, cfg):
+    """A voice request with qlx_fragqQueue added, unless !voice named a queue."""
+    if cfg.get("queue") and not payload.get("queue"):
+        return dict(payload, queue=cfg["queue"])
+    return payload
+
+
 def _num(d, *path):
     for key in path:
         d = d.get(key) if isinstance(d, dict) else None
@@ -173,6 +183,7 @@ class fragq(ql.Plugin):
         self.set_cvar_once("qlx_fragqVerifyTls", "1")
         self.set_cvar_once("qlx_fragqVoice", "0")
         self.set_cvar_once("qlx_voicemoveperm", "4")
+        self.set_cvar_once("qlx_fragqQueue", "")
 
         # Shared with the worker thread. Cvars and the database are read on the game thread (load_config)
         # and handed over as a plain dict; the stats hook (the ZMQ thread on minqlx, the main thread on minqlxtended) only updates dicts.
@@ -240,6 +251,7 @@ class fragq(ql.Plugin):
             "verify_tls": _int(self.get_cvar("qlx_fragqVerifyTls"), 1) != 0,
             "voice": _int(self.get_cvar("qlx_fragqVoice"), 0) != 0,
             "voice_perm": _int(self.get_cvar("qlx_voicemoveperm"), 4),
+            "queue": " ".join(_clean(self.get_cvar("qlx_fragqQueue")).split())[:60],
         }
         with self._lock:
             self._cfg = cfg
@@ -565,6 +577,7 @@ class fragq(ql.Plugin):
         player.tell(_text(f"^1FragQ^7 {VERSION} on {RUNTIME}: {cfg.get('url') or '^1address not set^7'}, key {key}, "
                           f"results {'on' if cfg.get('results') else 'off'}, link required {'yes' if cfg.get('enforce') else 'no'}, "
                           f"Discord invite {cfg.get('invite') or 'not set'}, "
+                          f"queue {cfg.get('queue') or 'not set'}, "
                           f"voice moves {'on' if cfg.get('voice') else 'off'}, last voice request {self._voice_last}, "
                           f"{len(self._outbox)} result(s) waiting. Last: {last['time'] or 'never'} ({last['message']})."))
         return STOP_ALL
@@ -613,8 +626,8 @@ class fragq(ql.Plugin):
         else:
             player.tell(usage)
             return STOP_ALL
-        if rest:
-            payload["queue"] = " ".join(rest)[:64]
+        if rest:   # FragQ matches queue names in any case; this takes precedence over qlx_fragqQueue
+            payload["queue"] = " ".join(rest)[:60]
         now = time.time()
         if now - self._voice_cmd_at < VOICE_COOLDOWN:
             player.tell(f"^1FragQ:^7 wait {int(VOICE_COOLDOWN - (now - self._voice_cmd_at)) + 1}s.")
@@ -740,7 +753,7 @@ class fragq(ql.Plugin):
         out = {
             "version": 1, "match_uid": str(report.get("MATCH_GUID") or "") or None, "game": "Quake Live",
             "map": str(report.get("MAP") or "") or None, "mode": mode.upper() or None,
-            "duration": length or None, "server": cfg.get("server") or None,
+            "duration": length or None, "server": cfg.get("server") or None, "queue": cfg.get("queue") or None,
             "players": [{
                 "id": sid, "id_type": "steam", "name": p["name"], "quit": p["quit"],
                 "team": TEAMS.get(p["team"]) if teams_on else None,
@@ -793,7 +806,7 @@ class fragq(ql.Plugin):
             self._voice_snapshot()   # comes back through _voice_out
         if not payload or not cfg.get("voice"):
             return
-        data, error, _ = self._request(cfg, "POST", "/voice", payload)
+        data, error, _ = self._request(cfg, "POST", "/voice", _with_queue(payload, cfg))
         if error:
             self.logger.warning(f"fragq: voice move request failed: {error}")
             self._voice_last = f"{time.strftime('%H:%M')} failed: {error}"
@@ -805,7 +818,8 @@ class fragq(ql.Plugin):
     @ql.thread
     def _manual_voice(self, reply_to, payload, label):
         """!voice: one request now, whatever qlx_fragqVoice says."""
-        data, error, _ = self._request(self._config(), "POST", "/voice", payload)
+        cfg = self._config()
+        data, error, _ = self._request(cfg, "POST", "/voice", _with_queue(payload, cfg))
         stamp = time.strftime('%H:%M')
         if error:
             self._voice_last = f"{stamp} !voice {label} failed: {error}"
@@ -913,6 +927,14 @@ class fragq(ql.Plugin):
         if self._config().get("voice") and not can.get("voice"):
             missing.append("voice moves")
         warn = f" ^3This key isn't allowed: {', '.join(missing)}.^7" if missing else ""
+        queue = self._config().get("queue")
+        names = [str(n) for n in c.get("queues") or []]
+        if queue:
+            same = [n for n in names if n.casefold() == queue.casefold()]
+            if not same:
+                warn += f" ^3qlx_fragqQueue is '{queue}', but this key has no queue of that name.^7"
+            elif len(same) > 1:
+                warn += f" ^3This key has {len(same)} queues named '{queue}'; give each server its own connector.^7"
         self._reply(reply_to, f"^1FragQ:^7 connected to FragQ {data.get('fragq_version')} as '{c.get('name')}' "
                               f"({c.get('game')}), queues: {', '.join(c.get('queues') or []) or 'none'}.{warn}")
 

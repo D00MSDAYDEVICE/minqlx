@@ -185,6 +185,7 @@ Works on both minqlx and Minqlx Extended. Full documentation: [Quake Live (minql
 **!setdiscord** `<invite URL>` - Discord invite shown to players who aren't on the server yet; `off` removes it (qlx_fragqAdminLevel)<br>
 **!voice** `teams` / `lobby` - Move everyone to their team's voice channel now, or back to the lobby (qlx_voicemoveperm)<br>
 **!voice** `<player ID #>` `red|blue|lobby` - Move one player (qlx_voicemoveperm)<br>
+Add a queue name to any !voice command, in any case (`!voice teams ca`), to pick the queue<br>
 **!fragq** - Status: address, key, last result sent (qlx_fragqAdminLevel)<br>
 **!fragq url** `<address>` - Set the FragQ address (permission 5)<br>
 **!fragq key** `<key>` - Set the connector key (permission 5, console/rcon only)<br>
@@ -202,6 +203,7 @@ Works on both minqlx and Minqlx Extended. Full documentation: [Quake Live (minql
 `qlx_fragqVerifyTls 1` - 0 accepts a self-signed certificate<br>
 `qlx_fragqVoice 0` - 1 moves players between the queue's Discord voice channels (voice moves on in FragQ, key allowed to move players in voice)<br>
 `qlx_voicemoveperm 4` - Permission level for !voice<br>
+`qlx_fragqQueue ""` - The FragQ queue this server plays, sent with voice moves and results (for servers sharing a key with several queues)<br>
 
 ## lastmaps.py [right-click & save](https://raw.githubusercontent.com/D00MSDAYDEVICE/minqlx/refs/heads/main/lastmaps.py) <br>
 Shows a lists of the last 5 played maps<br>
