@@ -404,8 +404,8 @@
     },
     {
       "filename": "fragq.py",
-      "label": "FragQ v1.3.0",
-      "description": "Sends each match's results (Top Damage, Least Damage, Most Damage Taken, Most Frags, Highest Accuracy, Quitters and a stats table) to FragQ, the Discord pickup game bot, which posts them in the queue's channel. Players can link their Steam account to Discord with !link, and !linkenforce keeps unlinked players in spectator. With voice moves, FragQ moves players between the queue's Discord voice channels at match start, after team changes and when the match ends or is aborted, and admins can move players by hand with !voice. Works on minqlx and minqlxtended: pick the runtime when downloading. Needs a FragQ connector key (beta). Match results need zmq_stats_enable 1 on both runtimes.",
+      "label": "FragQ v1.4.0",
+      "description": "Sends each match's results (Top Damage, Least Damage, Most Damage Taken, Most Frags, Highest Accuracy, Quitters and a stats table) to FragQ, the Discord pickup game bot, which posts them in the queue's channel. Players can link their Steam account to Discord with !link, and !linkenforce keeps unlinked players in spectator. With voice moves, FragQ moves players between the queue's Discord voice channels as soon as the match countdown starts, after team changes and when the match ends or is aborted, and admins can move players by hand with !voice. !fragq shows what the last voice event and request did. Works on minqlx and minqlxtended: pick the runtime when downloading. Needs a FragQ connector key (beta). Match results need zmq_stats_enable 1 on both runtimes.",
       "requires_qlsm_version": "1.36.0",
       "cvars": [
         {
@@ -484,7 +484,7 @@
         {
           "cvar": "qlx_fragqVoice",
           "default": false,
-          "description": "Tell FragQ the teams at match start and after team changes, and send everyone back to the lobby when the match ends or is aborted. Needs voice moves on for the queue and a key allowed to move players in voice.",
+          "description": "Tell FragQ the teams when the match countdown starts and after team changes, and send everyone back to the lobby when the match ends or is aborted. Read again at every countdown. Needs voice moves on for the queue and a key allowed to move players in voice.",
           "label": "Voice moves",
           "type": "bool"
         },
@@ -499,7 +499,7 @@
         {
           "cvar": "qlx_fragqQueue",
           "default": "",
-          "description": "The FragQ queue this server plays, in any case. Sent with voice moves and results, so servers sharing a key with several queues use their own queue. Empty: FragQ works it out.",
+          "description": "The FragQ queue this server plays, in any case. Sent with voice moves and results, so servers sharing a key with several queues use their own queue. Needed when several of the key's queues have voice moves on; set it in server.cfg so a restart keeps it. Empty: FragQ works it out.",
           "label": "FragQ queue",
           "type": "string"
         }
@@ -530,10 +530,10 @@
           "usage": "teams | lobby | <player id> red|blue|lobby [queue]"
         },
         {
-          "description": "Status, or set up and test the connection to FragQ (url, key and test need permission 5; key only from the server console or rcon).",
+          "description": "Status (one setting per line, with the last voice event and request), or set up and test the connection to FragQ (url, key and test need permission 5; key only from the server console or rcon). queue lists the key's queues, whether voice moves are on and which one qlx_fragqQueue picks.",
           "name": "fragq",
           "permission": 3,
-          "usage": "[url <address> | key <key> | test]"
+          "usage": "[url <address> | key <key> | test | queue]"
         }
       ]
     },

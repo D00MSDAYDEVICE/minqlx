@@ -165,7 +165,7 @@ Works on both minqlx and Minqlx Extended. Full documentation: [Quake Live (minql
 ● Highlights: Top Damage, Least Damage, Most Damage Taken, Most Frags, Highest Accuracy and Quitters, plus a stats table per team<br>
 ● Players link their Steam account to Discord from the game with !link, confirmed in a Discord direct message<br>
 ● Optionally keeps players without a linked Steam account in spectator<br>
-● Voice moves: FragQ moves players between the queue's Discord voice channels at match start, after team changes and when the match ends or is aborted<br>
+● Voice moves: FragQ moves players between the queue's Discord voice channels as soon as the match countdown starts, after team changes and when the match ends or is aborted<br>
 ● Admins can move players by hand with !voice, for teams arranged in the game<br>
 <br>
 > [!NOTE]
@@ -186,7 +186,8 @@ Works on both minqlx and Minqlx Extended. Full documentation: [Quake Live (minql
 **!voice** `teams` / `lobby` - Move everyone to their team's voice channel now, or back to the lobby (qlx_voicemoveperm)<br>
 **!voice** `<player ID #>` `red|blue|lobby` - Move one player (qlx_voicemoveperm)<br>
 Add a queue name to any !voice command, in any case (`!voice teams ca`), to pick the queue<br>
-**!fragq** - Status: address, key, last result sent (qlx_fragqAdminLevel)<br>
+**!fragq** - Status, one setting per line: address, key, last result, queue, auto voice moves, last voice event and request (qlx_fragqAdminLevel)<br>
+**!fragq queue** - The key's queues, whether voice moves are on, and which one qlx_fragqQueue picks (qlx_fragqAdminLevel)<br>
 **!fragq url** `<address>` - Set the FragQ address (permission 5)<br>
 **!fragq key** `<key>` - Set the connector key (permission 5, console/rcon only)<br>
 **!fragq test** - Check the connection and the key (permission 5)<br>
@@ -201,9 +202,9 @@ Add a queue name to any !voice command, in any case (`!voice teams ca`), to pick
 `qlx_fragqDiscordInvite ""` - Start value for !setdiscord before it is first used<br>
 `qlx_fragqAdminLevel 3` - Permission level for !linkenforce, !setdiscord, !fragq and linking others<br>
 `qlx_fragqVerifyTls 1` - 0 accepts a self-signed certificate<br>
-`qlx_fragqVoice 0` - 1 moves players between the queue's Discord voice channels (voice moves on in FragQ, key allowed to move players in voice)<br>
+`qlx_fragqVoice 0` - 1 moves players between the queue's Discord voice channels at the countdown (voice moves on in FragQ, key allowed to move players in voice); read again at every countdown<br>
 `qlx_voicemoveperm 4` - Permission level for !voice<br>
-`qlx_fragqQueue ""` - The FragQ queue this server plays, sent with voice moves and results (for servers sharing a key with several queues)<br>
+`qlx_fragqQueue ""` - The FragQ queue this server plays, sent with voice moves and results (needed when several of the key's queues have voice moves on; set it in server.cfg)<br>
 
 ## lastmaps.py [right-click & save](https://raw.githubusercontent.com/D00MSDAYDEVICE/minqlx/refs/heads/main/lastmaps.py) <br>
 Shows a lists of the last 5 played maps<br>

@@ -9,9 +9,11 @@ When a match ends the plugin works out the highlights (Top Damage, Least Damage,
 Most Frags, Highest Accuracy, Quitters) and a per-player table, and sends them to FragQ in one request.
 FragQ finds the pickup match the players were in and posts the results in its Discord channel.
 
-With qlx_fragqVoice 1 (and a key allowed to move players in voice), the plugin tells FragQ the teams when a
-match starts and after team changes, and sends everyone back to the lobby when it ends or is aborted. FragQ
-moves the players between the queue's voice channels in Discord; that needs voice moves turned on for the queue.
+With qlx_fragqVoice 1 (and a key allowed to move players in voice), the plugin tells FragQ the teams when the
+match countdown starts, again when the match starts if the teams changed, and after team changes, and sends
+everyone back to the lobby when it ends or is aborted. FragQ moves the players between the queue's voice channels
+in Discord; that needs voice moves turned on for the queue. !fragq shows what the last game event did about voice
+moves ("Last voice event") and how the last request went; the server log has every one.
 Admins can also move players by hand with !voice, for teams arranged in the game, with or without qlx_fragqVoice.
 
 Setup, from the server console or rcon (the key must not be typed in chat):
@@ -35,7 +37,9 @@ Commands:
     !voice teams [queue]             move everyone to their team's voice channel now, in warmup too (qlx_voicemoveperm)
     !voice lobby [queue]             move everyone in a team channel back to the lobby (qlx_voicemoveperm)
     !voice <player id> red|blue|lobby [queue]   move one player (qlx_voicemoveperm)
-    !fragq                           status (qlx_fragqAdminLevel)
+    !fragq                           status, one setting per line (qlx_fragqAdminLevel)
+    !fragq queue                     the key's queues (voice moves on or off, which one qlx_fragqQueue picks)
+                                     and the Discord server's queues the key doesn't have (qlx_fragqAdminLevel)
     !fragq url <url>                 set the FragQ address (permission 5)
     !fragq key <key>                 set the connector key (permission 5, server console / rcon only)
     !fragq test                      check the connection and the key (permission 5)
@@ -55,7 +59,8 @@ Cvars:
     qlx_voicemoveperm       permission level for !voice (default 4)
     qlx_fragqQueue          the FragQ queue this server plays (default empty: FragQ works it out from the
                             key's queues). Sent with every voice request and result; a queue name typed after
-                            !voice takes precedence. Not case-sensitive.
+                            !voice takes precedence. Not case-sensitive. Needed when the key has several
+                            queues with voice moves on; set it in server.cfg so a restart keeps it.
 """
 import collections
 import json
@@ -79,7 +84,7 @@ except ImportError:
     STOP_ALL = ql.RET_STOP_ALL
     RUNTIME = "minqlx"
 
-VERSION = "1.3.0"
+VERSION = "1.4.0"
 DB_URL = "minqlx:fragq:url"
 DB_KEY = "minqlx:fragq:key"
 DB_ENFORCE = "minqlx:fragq:enforce"
@@ -137,6 +142,17 @@ def _clean(s):
     return COLOR_RE.sub("", str(s or ""))
 
 
+def _plain(s, limit=40):
+    """A Discord queue or channel name the QL client can draw: no colour codes, emoji or box characters."""
+    return re.sub(r"[^\x20-\x7e]+", "", _clean(s)).strip(" |-_")[:limit] or "?"
+
+
+def _opt(label, value):
+    """One status line: the option in cyan, its setting in white (on/yes green, off/no red)."""
+    colour = {"on": "^2", "yes": "^2", "off": "^1", "no": "^1"}.get(str(value), "^7")
+    return f"^5{label}:{colour} {value}^7"
+
+
 def _invite(text):
     """A Discord invite link in any usual form -> 'discord.gg/<code>', or None."""
     m = INVITE_RE.match((text or "").strip())
@@ -153,6 +169,39 @@ def _int(value, default):
 def _team(team):
     """'red', 'blue', 'free', 'spectator' or 'any': minqlx gives strings, minqlxtended Team members."""
     return str(getattr(team, "name", team) or "").lower()
+
+
+VOICE_WHY = {"not_linked": "not linked", "not_in_voice": "not in voice", "other_channel": "in another voice channel",
+             "already_there": "already there", "not_member": "not on the Discord", "no_permission": "bot lacks permission",
+             "failed": "failed", "in_series": "in a series"}
+
+
+def _voice_counts(data):
+    """A /voice reply -> (moved, players, queue, why the others weren't moved)."""
+    players = data.get("players") or []
+    counts = collections.Counter(p.get("status") for p in players)
+    moved = counts.pop("moved", 0)
+    rest = ", ".join(f"{n} {VOICE_WHY.get(st, st)}" for st, n in counts.most_common())
+    return moved, len(players), data.get("queue"), rest
+
+
+NO_QUEUE = "Send the queue's name in 'queue'."   # FragQ's reply when the key has several voice queues and no match
+
+
+def _voice_error(error, cfg, manual=False):
+    """A failed /voice reply, with what to do in Quake Live terms when FragQ couldn't tell which queue to use."""
+    if NO_QUEUE not in error or cfg.get("queue"):
+        return error
+    how = "set qlx_fragqQueue" + (", or add a queue name after the command" if manual else "")
+    return error.replace(NO_QUEUE, f"To fix it, {how} (!fragq queue lists them).")
+
+
+def _voice_queues(conn):
+    """The names of a /status connector's queues with voice moves on, or None for an older FragQ."""
+    queues = conn.get("queue_list")
+    if not isinstance(queues, list):
+        return None
+    return [str(q.get("name")) for q in queues if isinstance(q, dict) and q.get("voice")]
 
 
 def _with_queue(payload, cfg):
@@ -204,6 +253,8 @@ class fragq(ql.Plugin):
         self._voice_out = None         # a voice request waiting for the worker
         self._voice_last = "nothing sent yet"
         self._voice_live = False       # teams were sent for a match that hasn't ended: an abort sends the lobby
+        self._voice_sent = None        # {team: frozenset of SteamIDs} last sent, so game start doesn't repeat the countdown
+        self._voice_event = "none since the plugin loaded"
         self._voice_cmd_at = 0.0
         self._stop = threading.Event()
         self._wake = threading.Event()
@@ -214,6 +265,7 @@ class fragq(ql.Plugin):
         self.add_hook("player_disconnect", self.handle_player_disconnect)
         self.add_hook("team_switch_attempt", self.handle_team_switch_attempt)
         self.add_hook("map", self.handle_map)
+        self.add_hook("game_countdown", self.handle_game_countdown)
         self.add_hook("game_start", self.handle_game_start)
         self.add_hook("game_end", self.handle_game_end)
         self.add_hook("new_game", self.handle_new_game)
@@ -222,7 +274,7 @@ class fragq(ql.Plugin):
         self.add_command("link", self.cmd_link, usage="<discord id> | <player id> <discord id>")
         self.add_command("linkenforce", self.cmd_linkenforce, usage="[on|off]")
         self.add_command("setdiscord", self.cmd_setdiscord, usage="<invite URL> | off")
-        self.add_command("fragq", self.cmd_fragq, usage="[url <url> | key <key> | test]")
+        self.add_command("fragq", self.cmd_fragq, usage="[url <url> | key <key> | test | queue]")
         self.add_command("voice", self.cmd_voice, usage="teams | lobby | <player id> red|blue|lobby [queue]")
 
         self._thread = threading.Thread(target=self._worker, name="fragq", daemon=True)
@@ -331,39 +383,57 @@ class fragq(ql.Plugin):
         with self._lock:
             self._match, self._report, self._finish_at = {}, None, 0.0
             self._voice_due, self._voice_out = 0.0, None
-        self._voice_live = False
+        self._voice_live, self._voice_sent = False, None
 
-    # game_start: (data) on minqlx, () on minqlxtended; game_end: (data) on minqlx, (aborted) on minqlxtended;
-    # new_game: () on both. No argument is needed, so *_ registers on both.
+    # Voice moves follow the match: teams when the countdown starts (game_countdown, () on both runtimes), again at
+    # game_start if they changed, after team changes, the lobby at game_end or an abort. game_start: (data) on
+    # minqlx, () on minqlxtended; game_end: (data) on minqlx, (aborted) on minqlxtended; new_game: () on both. No
+    # argument is needed, so *_ registers on both. Some minqlxtended builds never raise game_start; the countdown
+    # covers them.
+    def handle_game_countdown(self, *_):
+        self.load_config()   # a qlx_fragqVoice or qlx_fragqQueue set in warmup counts from this match
+        self._send_teams("countdown")
+
     def handle_game_start(self, *_):
-        if self._cfg.get("voice"):
-            teams = self._voice_teams()
-            self._voice_live = bool(teams)
-            self._queue_voice(teams)
+        self._send_teams("match start", repeat=False)
 
     def handle_game_end(self, *_):
-        self._voice_live = False
-        if self._cfg.get("voice"):
-            teams = self._voice_teams()
-            with self._lock:
-                self._voice_due = 0.0
-            if teams:
-                self._queue_voice({"lobby": [sid for ids in teams["teams"].values() for sid in ids]})
+        self._voice_live, self._voice_sent = False, None
+        if not self._cfg.get("voice"):
+            self._note_voice("match end", "nothing sent, qlx_fragqVoice is 0")
+            return
+        teams, why = self._voice_teams()
+        with self._lock:
+            self._voice_due = 0.0
+        if not teams:
+            self._note_voice("match end", f"nothing sent, {why}")
+            return
+        lobby = [sid for ids in teams["teams"].values() for sid in ids]
+        self._queue_voice({"lobby": lobby}, "match end")
+        self._note_voice("match end", f"sending {len(lobby)} player(s) to the lobby")
 
     def handle_new_game(self, *_):
-        # !abort and abort votes restart the map: new_game in warmup, and game_end never comes.
+        # !abort and abort votes restart the map: new_game in warmup, and game_end never comes. A match starting
+        # restarts the map too, so the state is read a second later, when a starting match is in progress.
+        if self._voice_live:
+            self._check_abort()
+
+    @ql.delay(1)
+    def _check_abort(self):
         if not self._voice_live or self._state() != "warmup":
             return
-        self._voice_live = False
-        if self._cfg.get("voice"):
-            with self._lock:
-                self._voice_due = 0.0
-            lobby = self._everyone()
-            if lobby:
-                self._queue_voice({"lobby": lobby})
+        self._voice_live, self._voice_sent = False, None
+        if not self._cfg.get("voice"):
+            return
+        with self._lock:
+            self._voice_due = 0.0
+        lobby = self._everyone()
+        if lobby:
+            self._queue_voice({"lobby": lobby}, "abort")
+            self._note_voice("abort", f"sending {len(lobby)} player(s) to the lobby")
 
     def handle_team_switch(self, player, old_team, new_team):
-        if self._cfg.get("voice") and self._in_progress():
+        if self._cfg.get("voice") and self._state() in ("countdown", "in_progress"):
             with self._lock:   # read the teams once the changes settle: one request for a whole shuffle
                 self._voice_due = time.time() + VOICE_SETTLE
             self._wake.set()
@@ -377,35 +447,65 @@ class fragq(ql.Plugin):
     def _in_progress(self):
         return self._state() == "in_progress"
 
+    def _note_voice(self, event, outcome):
+        """What a game event did about voice moves: !fragq shows the last one, the server log has them all."""
+        self._voice_event = f"{time.strftime('%H:%M')} {event}: {outcome}"
+        self.logger.info(f"fragq: voice, {event}: {outcome}")
+
+    def _send_teams(self, event, repeat=True):
+        """Read the teams and hand them to the worker, or note why not (game thread)."""
+        if not self._cfg.get("voice"):
+            self._note_voice(event, "nothing sent, qlx_fragqVoice is 0")
+            return
+        teams, why = self._voice_teams()
+        if not teams:
+            self._note_voice(event, f"nothing sent, {why}")
+            return
+        self._voice_live = True
+        sent = {team: frozenset(ids) for team, ids in teams["teams"].items()}
+        if not repeat and sent == self._voice_sent:
+            self._note_voice(event, "teams unchanged since they were sent, not sent again")
+            return
+        self._voice_sent = sent
+        self._queue_voice(teams, event)
+        self._note_voice(event, f"sending red {len(sent['red'])}, blue {len(sent['blue'])}")
+
     def _voice_teams(self):
-        """{"teams": {"red": [...], "blue": [...]}} of a team game, or None (game thread)."""
+        """({"teams": {"red": [...], "blue": [...]}}, None) of a team game, or (None, why not) (game thread)."""
         try:
-            if str(self.game.type_short).lower() not in TEAM_MODES:
-                return None
+            mode = str(self.game.type_short).lower()
         except Exception:  # noqa: BLE001 - NonexistentGameError
-            return None
+            return None, "no game loaded"
+        if mode not in TEAM_MODES:
+            return None, f"{mode} isn't a team mode"
         teams = {"red": [], "blue": []}
+        bots = 0
         for p in self.players():
             team, sid = _team(p.team), str(p.steam_id)
-            if team in teams and _is_steam_id(sid):
-                teams[team].append(sid)
-        return {"teams": teams} if teams["red"] or teams["blue"] else None
+            if team in teams:
+                if _is_steam_id(sid):
+                    teams[team].append(sid)
+                else:
+                    bots += 1
+        if teams["red"] or teams["blue"]:
+            return {"teams": teams}, None
+        return None, f"only bots on red and blue ({bots})" if bots else "nobody on red or blue"
 
     def _everyone(self):
         """The SteamIDs of everyone on the server, spectators too (game thread)."""
         return [str(p.steam_id) for p in self.players() if _is_steam_id(p.steam_id)][:64]
 
-    def _queue_voice(self, payload):
+    def _queue_voice(self, payload, label):
         if payload:
             with self._lock:
-                self._voice_out = payload
+                self._voice_out = (payload, label)
             self._wake.set()
 
     @ql.next_frame
     def _voice_snapshot(self):
         """The teams after a team change, read on the game thread for the worker to send."""
-        if self._in_progress():
-            self._queue_voice(self._voice_teams())
+        if self._state() in ("countdown", "in_progress"):
+            self._send_teams("team change", repeat=False)
 
     def handle_unload(self, plugin):
         if plugin == self.__class__.__name__:
@@ -571,15 +671,31 @@ class fragq(ql.Plugin):
         if not self.db.has_permission(player, cfg.get("admin_level", 3)):
             player.tell("^1FragQ:^7 you don't have permission to see the FragQ settings.")
             return STOP_ALL
+        if sub == "queue":
+            now = time.time()
+            if now - self._command_at < 5:
+                player.tell("^1FragQ:^7 wait a few seconds.")
+                return STOP_ALL
+            self._command_at = now
+            self._list_queues(self._reply_target(player, channel))
+            return STOP_ALL
         with self._lock:
             last = dict(self._last)
-        key = cfg["key"][:9] + "..." if cfg.get("key") else "^1not set^7"
-        player.tell(_text(f"^1FragQ^7 {VERSION} on {RUNTIME}: {cfg.get('url') or '^1address not set^7'}, key {key}, "
-                          f"results {'on' if cfg.get('results') else 'off'}, link required {'yes' if cfg.get('enforce') else 'no'}, "
-                          f"Discord invite {cfg.get('invite') or 'not set'}, "
-                          f"queue {cfg.get('queue') or 'not set'}, "
-                          f"voice moves {'on' if cfg.get('voice') else 'off'}, last voice request {self._voice_last}, "
-                          f"{len(self._outbox)} result(s) waiting. Last: {last['time'] or 'never'} ({last['message']})."))
+        lines = [
+            f"^1FragQ^7 {VERSION} on {RUNTIME}",
+            _opt("Address", cfg.get("url") or "^1not set"),
+            _opt("Key", cfg["key"][:9] + "..." if cfg.get("key") else "^1not set"),
+            _opt("Results", "on" if cfg.get("results") else "off"),
+            _opt("Last result", f"{last['time'] or 'never'} ({last['message']}), {len(self._outbox)} waiting"),
+            _opt("Link required", "yes" if cfg.get("enforce") else "no"),
+            _opt("Discord invite", cfg.get("invite") or "not set"),
+            _opt("Queue", cfg.get("queue") or "not set (^5!fragq queue^7 lists them)"),
+            _opt("Auto voice moves", "on" if cfg.get("voice") else "off"),
+            _opt("Last voice event", self._voice_event),
+            _opt("Last voice request", self._voice_last),
+        ]
+        for line in lines:
+            player.tell(_text(line))
         return STOP_ALL
 
     def cmd_voice(self, player, msg, channel):
@@ -597,9 +713,9 @@ class fragq(ql.Plugin):
         if what in ("teams", "lobby"):
             rest = args[1:]
             if what == "teams":
-                payload = self._voice_teams()
+                payload, why = self._voice_teams()
                 if not payload:
-                    player.tell("^1FragQ:^7 nobody is on red or blue, or this isn't a team game.")
+                    player.tell(_text(f"^1FragQ:^7 nothing to send: {why}."))
                     return STOP_ALL
                 label = "teams"
             else:
@@ -801,19 +917,26 @@ class fragq(ql.Plugin):
             due = self._voice_due and time.time() >= self._voice_due
             if due:
                 self._voice_due = 0.0
-            payload, self._voice_out = self._voice_out, None
+            item, self._voice_out = self._voice_out, None
         if due:
             self._voice_snapshot()   # comes back through _voice_out
-        if not payload or not cfg.get("voice"):
+        if not item:
+            return
+        payload, label = item
+        stamp = time.strftime('%H:%M')
+        if not cfg.get("voice"):
+            self._voice_last = f"{stamp} {label}: not sent, qlx_fragqVoice is 0"
             return
         data, error, _ = self._request(cfg, "POST", "/voice", _with_queue(payload, cfg))
         if error:
-            self.logger.warning(f"fragq: voice move request failed: {error}")
-            self._voice_last = f"{time.strftime('%H:%M')} failed: {error}"
+            error = _voice_error(error, cfg)
+            self.logger.warning(f"fragq: voice move request ({label}) failed: {error}")
+            self._voice_last = f"{stamp} {label} failed: {error}"
             return
-        players = data.get("players") or []
-        moved = sum(1 for p in players if p.get("status") == "moved")
-        self._voice_last = f"{time.strftime('%H:%M')} {moved} of {len(players)} moved ({data.get('queue')})"
+        moved, total, queue, rest = _voice_counts(data)
+        summary = f"{moved} of {total} moved ({queue})" + (f": {rest}" if rest else "")
+        self.logger.info(f"fragq: voice request ({label}): {summary}")
+        self._voice_last = f"{stamp} {label}: {summary}"
 
     @ql.thread
     def _manual_voice(self, reply_to, payload, label):
@@ -822,18 +945,13 @@ class fragq(ql.Plugin):
         data, error, _ = self._request(cfg, "POST", "/voice", _with_queue(payload, cfg))
         stamp = time.strftime('%H:%M')
         if error:
+            error = _voice_error(error, cfg, manual=True)
             self._voice_last = f"{stamp} !voice {label} failed: {error}"
             self._reply(reply_to, f"^1FragQ:^7 voice move failed: {error}")
             return
-        players = data.get("players") or []
-        counts = collections.Counter(p.get("status") for p in players)
-        moved = counts.pop("moved", 0)
-        self._voice_last = f"{stamp} !voice {label}: {moved} of {len(players)} moved ({data.get('queue')})"
-        why = {"not_linked": "not linked", "not_in_voice": "not in voice", "other_channel": "in another voice channel",
-               "already_there": "already there", "not_member": "not on the Discord", "no_permission": "bot lacks permission",
-               "failed": "failed"}
-        rest = ", ".join(f"{n} {why.get(st, st)}" for st, n in counts.most_common())
-        self._reply(reply_to, f"^1FragQ:^7 {'^2' if moved else '^3'}{moved} of {len(players)} moved^7 ({data.get('queue')})"
+        moved, total, queue, rest = _voice_counts(data)
+        self._voice_last = f"{stamp} !voice {label}: {moved} of {total} moved ({queue})" + (f": {rest}" if rest else "")
+        self._reply(reply_to, f"^1FragQ:^7 {'^2' if moved else '^3'}{moved} of {total} moved^7 ({queue})"
                               + (f": {rest}." if rest else "."))
 
     # ------------------------------------------------------------ linked players
@@ -935,8 +1053,49 @@ class fragq(ql.Plugin):
                 warn += f" ^3qlx_fragqQueue is '{queue}', but this key has no queue of that name.^7"
             elif len(same) > 1:
                 warn += f" ^3This key has {len(same)} queues named '{queue}'; give each server its own connector.^7"
+        elif can.get("voice") and len(_voice_queues(c) or []) > 1:
+            warn += (" ^3Several of this key's queues have voice moves on; set qlx_fragqQueue so voice moves "
+                     "know which one to use (^5!fragq queue^3 lists them).^7")
         self._reply(reply_to, f"^1FragQ:^7 connected to FragQ {data.get('fragq_version')} as '{c.get('name')}' "
                               f"({c.get('game')}), queues: {', '.join(c.get('queues') or []) or 'none'}.{warn}")
+
+    @ql.thread
+    def _list_queues(self, reply_to):
+        """!fragq queue: the key's queues and the Discord server's others, from GET /status."""
+        cfg = self._config()
+        data, error, _ = self._request(cfg, "GET", "/status")
+        if error:
+            self._reply(reply_to, f"^1FragQ:^7 connection failed: {error}")
+            return
+        c = data.get("connector") or {}
+        mine = c.get("queue_list")
+        if not isinstance(mine, list):   # an older FragQ: names only
+            mine = [{"name": n} for n in c.get("queues") or []]
+        mine = [q for q in mine if isinstance(q, dict)]
+        others = [q for q in c.get("other_queues") or [] if isinstance(q, dict)]
+        want = (cfg.get("queue") or "").casefold()
+        lines = [f"^1FragQ:^7 queues of the key ^5{_plain(c.get('name'), 60)}^7:" if mine else
+                 "^1FragQ:^7 this key has no queues. Tick them on the connector in FragQ's Connectors page."]
+        for q in mine[:20]:
+            line = f"  ^5{_plain(q.get('name'))}^7"
+            if q.get("channel"):
+                line += f" in #{_plain(q['channel'])}"
+            if "voice" in q:
+                line += f", voice moves {'^2on' if q['voice'] else '^1off'}^7"
+            if want and str(q.get("name", "")).casefold() == want:
+                line += " ^3<- qlx_fragqQueue^7"
+            lines.append(line)
+        if want and not any(str(q.get("name", "")).casefold() == want for q in mine):
+            lines.append(f"^3qlx_fragqQueue is '{_plain(cfg['queue'])}', which isn't one of the key's queues.^7")
+        elif not want and len(_voice_queues(c) or []) > 1:
+            lines.append("^3qlx_fragqQueue isn't set, and several of these queues have voice moves on: voice moves "
+                         "only work for players in a FragQ match. Set it to the queue this server plays.^7")
+        if others:
+            names = ", ".join(f"^5{_plain(q.get('name'))}^7" + (f" (#{_plain(q['channel'])})" if q.get("channel") else "")
+                              for q in others[:10])
+            more = f" and {len(others) - 10} more" if len(others) > 10 else ""
+            lines.append(f"Not on this key: {names}{more}. Tick a queue on the connector in FragQ's Connectors page to use it.")
+        self._reply(reply_to, *lines)
 
     # ------------------------------------------------------------ back on the game thread: tells only
 
